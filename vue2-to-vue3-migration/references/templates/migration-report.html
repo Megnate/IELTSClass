@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vue2→Vue3 Migration Report: {{MODULE_NAME}}</title>
+<style>
+  :root { --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #c9d1d9; --muted: #8b949e; --accent: #58a6ff; --green: #3fb950; --yellow: #d2991d; --red: #f85149; --purple: #a371f7; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem; max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 1.8rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; margin-bottom: 1.5rem; }
+  h2 { font-size: 1.3rem; margin: 2rem 0 0.75rem; color: var(--accent); }
+  h3 { font-size: 1rem; margin: 1.25rem 0 0.5rem; color: var(--purple); }
+  .meta { display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .meta-item { display: flex; flex-direction: column; }
+  .meta-label { font-size: 0.75rem; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em; }
+  .meta-value { font-size: 1.1rem; font-weight: 600; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin: 0.75rem 0; }
+  .stat { text-align: center; padding: 1rem; background: var(--bg); border-radius: 6px; }
+  .stat-value { font-size: 2rem; font-weight: 700; }
+  .stat-label { font-size: 0.8rem; color: var(--muted); }
+  .stat-value.green { color: var(--green); }
+  .stat-value.yellow { color: var(--yellow); }
+  .stat-value.red { color: var(--red); }
+  .stat-value.blue { color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; }
+  th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  code { background: var(--bg); padding: 0.15em 0.4em; border-radius: 4px; font-size: 0.9em; }
+  .badge { display: inline-block; padding: 0.15em 0.6em; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+  .badge-pass { background: #1b3a1b; color: var(--green); }
+  .badge-warn { background: #3a2e1b; color: var(--yellow); }
+  .badge-fail { background: #3a1b1b; color: var(--red); }
+  .badge-info { background: #1b2a3a; color: var(--accent); }
+  .screenshot { max-width: 100%; border: 1px solid var(--border); border-radius: 6px; margin: 0.5rem 0; }
+  .diff-pair { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .diff-pair figure { flex: 1; min-width: 250px; }
+  .diff-pair img { width: 100%; border: 1px solid var(--border); border-radius: 6px; }
+  .diff-pair figcaption { text-align: center; font-size: 0.85rem; color: var(--muted); margin-top: 0.25rem; }
+  ul, ol { padding-left: 1.5rem; margin: 0.5rem 0; }
+  li { margin: 0.25rem 0; }
+  pre { background: var(--bg); padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.85rem; border: 1px solid var(--border); }
+  .toc { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<h1>Vue2 → Vue3 Migration Report</h1>
+
+<!-- ═══════════════ META ═══════════════ -->
+<div class="meta">
+  <div class="meta-item"><span class="meta-label">Module</span><span class="meta-value">{{MODULE_NAME}}</span></div>
+  <div class="meta-item"><span class="meta-label">Date</span><span class="meta-value">{{MIGRATION_DATE}}</span></div>
+  <div class="meta-item"><span class="meta-label">Complexity</span><span class="meta-value">{{COMPLEXITY}}</span></div>
+  <div class="meta-item"><span class="meta-label">Duration</span><span class="meta-value">{{DURATION}}</span></div>
+</div>
+
+<div class="toc">
+  <strong>Contents</strong>
+  <ol style="margin-top:0.5rem;">
+    <li><a href="#summary">Migration Summary</a></li>
+    <li><a href="#files">File Migration Details</a></li>
+    <li><a href="#patterns">Patterns Applied</a></li>
+    <li><a href="#lessons">New Lessons &amp; Errors</a></li>
+    <li><a href="#verification">Verification Results</a></li>
+    <li><a href="#playwright">Playwright Screenshots</a></li>
+    <li><a href="#todos">Known TODOs &amp; Deferred Items</a></li>
+  </ol>
+</div>
+
+<!-- ═══════════════ SECTION 1: SUMMARY ═══════════════ -->
+<h2 id="summary">1. Migration Summary</h2>
+<div class="card">
+  <div class="grid">
+    <div class="stat"><div class="stat-value blue">{{TOTAL_VUE_FILES}}</div><div class="stat-label">.vue files migrated</div></div>
+    <div class="stat"><div class="stat-value blue">{{TOTAL_TS_FILES}}</div><div class="stat-label">.ts files migrated</div></div>
+    <div class="stat"><div class="stat-value green">{{BUILD_SUCCESS}}</div><div class="stat-label">Build Status</div></div>
+    <div class="stat"><div class="stat-value green">{{TYPECHECK_SUCCESS}}</div><div class="stat-label">Type Check</div></div>
+  </div>
+  <p style="margin-top:0.75rem;">{{MIGRATION_OVERVIEW_PARAGRAPH}}</p>
+</div>
+
+<!-- ═══════════════ SECTION 2: FILE DETAILS ═══════════════ -->
+<h2 id="files">2. File Migration Details</h2>
+<div class="card">
+  <h3>By Migration Type</h3>
+  <table>
+    <tr><th>Type</th><th>Count</th><th>Description</th></tr>
+    {{FILE_TYPE_ROWS}}
+  </table>
+
+  <h3>Individual Files</h3>
+  <table>
+    <tr><th>File</th><th>Type</th><th>Changes</th><th>Status</th></tr>
+    {{FILE_ROWS}}
+  </table>
+</div>
+
+<!-- ═══════════════ SECTION 3: PATTERNS ═══════════════ -->
+<h2 id="patterns">3. Patterns Applied</h2>
+<div class="card">
+  {{PATTERNS_SECTION}}
+</div>
+
+<!-- ═══════════════ SECTION 4: LESSONS ═══════════════ -->
+<h2 id="lessons">4. New Lessons &amp; Errors Encountered</h2>
+<div class="card">
+  <h3>Errors Fixed</h3>
+  {{ERRORS_SECTION}}
+
+  <h3>New Patterns Discovered</h3>
+  {{NEW_PATTERNS_SECTION}}
+
+  <h3>Knowledge Base Updates</h3>
+  <p>{{KNOWLEDGE_BASE_UPDATES}}</p>
+</div>
+
+<!-- ═══════════════ SECTION 5: VERIFICATION ═══════════════ -->
+<h2 id="verification">5. Verification Results</h2>
+<div class="card">
+  <h3>TypeScript Check</h3>
+  <pre>{{TYPECHECK_OUTPUT}}</pre>
+  <span class="badge {{TYPECHECK_BADGE}}">{{TYPECHECK_STATUS}}</span>
+
+  <h3>Build</h3>
+  <pre>{{BUILD_OUTPUT}}</pre>
+  <span class="badge {{BUILD_BADGE}}">{{BUILD_STATUS}}</span>
+
+  <h3>Dev Server Smoke Test</h3>
+  <p>{{DEV_SERVER_RESULT}}</p>
+
+  <h3>Manual Checks</h3>
+  <ul>
+    {{MANUAL_CHECKS}}
+  </ul>
+</div>
+
+<!-- ═══════════════ SECTION 6: PLAYWRIGHT ═══════════════ -->
+<h2 id="playwright">6. Playwright Screenshots</h2>
+<div class="card">
+  <h3>Test Status</h3>
+  <p><span class="badge {{PLAYWRIGHT_BADGE}}">{{PLAYWRIGHT_STATUS}}</span></p>
+  <p>{{PLAYWRIGHT_DESCRIPTION}}</p>
+
+  {{PLAYWRIGHT_SCREENSHOTS_SECTION}}
+</div>
+
+<!-- ═══════════════ SECTION 7: TODOS ═══════════════ -->
+<h2 id="todos">7. Known TODOs &amp; Deferred Items</h2>
+<div class="card">
+  {{TODOS_SECTION}}
+</div>
+
+<p style="text-align:center; margin-top:3rem; color:var(--muted); font-size:0.8rem;">
+  Generated by vue2-to-vue3-migration skill via Hermes Agent · {{MIGRATION_DATE}}
+</p>
+
+</body>
+</html>
