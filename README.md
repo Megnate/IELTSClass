@@ -1,6 +1,4 @@
-# IELTSClass
-雅思课程学习归纳
-
+新增加的 claudeCode 大型项目最佳实践，是 Anthropic claude code 官方的一个文档生成的课件，是从此处粘贴而来：https://my.feishu.cn/wiki/XzbYwKs40iI5cEkHMHPcFMqtnaf 
 
 你是一个前端架构师，也是一个资深的前端工程师。整个项目有70w行代码，分为很多个模块，从菜单来说：Home页面，Job模块，Wafer Queue模块，Recipe 模块，Sequence 模块，Offset 模块，User Permission模块，Wafer History模块，Chamber History模块，等等还有其他的模块，这里暂时记不清楚，后续还可以拓展这一部分的内容。
 
