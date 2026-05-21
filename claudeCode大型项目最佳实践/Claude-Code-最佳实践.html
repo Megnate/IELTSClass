@@ -1,0 +1,4479 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Claude Code 大型代码库最佳实践 — 课件</title>
+        <style>
+            :root {
+                --purple-50: #eeedfe;
+                --purple-100: #cecbf6;
+                --purple-400: #7f77dd;
+                --purple-600: #534ab7;
+                --purple-800: #3c3489;
+                --teal-50: #e1f5ee;
+                --teal-100: #9fe1cb;
+                --teal-400: #1d9e75;
+                --teal-600: #0f6e56;
+                --coral-50: #faece7;
+                --coral-400: #d85a30;
+                --coral-600: #993c1d;
+                --pink-50: #fbeaf0;
+                --pink-400: #d4537e;
+                --blue-50: #e6f1fb;
+                --blue-400: #378add;
+                --blue-600: #185fa5;
+                --green-50: #eaf3de;
+                --green-400: #639922;
+                --green-600: #3b6d11;
+                --amber-50: #faeeda;
+                --amber-400: #ba7517;
+                --red-50: #fcebeb;
+                --red-400: #e24b4a;
+                --gray-50: #f1efe8;
+                --gray-200: #b4b2a9;
+                --gray-400: #888780;
+                --gray-600: #5f5e5a;
+                --gray-800: #2c2c2a;
+                --bg: #f8f7f4;
+                --card: #ffffff;
+                --text: #2c2c2a;
+                --text2: #5f5e5a;
+                --text3: #888780;
+                --border: #e5e3dc;
+                --radius: 12px;
+                --font-sans:
+                    -apple-system, BlinkMacSystemFont, "SF Pro Display",
+                    "Segoe UI", "Noto Sans SC", sans-serif;
+                --font-mono:
+                    "SF Mono", "JetBrains Mono", "Fira Code", monospace;
+                --nav-width: 260px;
+            }
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                font-family: var(--font-sans);
+                background: var(--bg);
+                color: var(--text);
+                line-height: 1.7;
+                min-height: 100vh;
+            }
+            nav {
+                position: fixed;
+                left: 0;
+                top: 0;
+                width: var(--nav-width);
+                height: 100vh;
+                background: var(--card);
+                border-right: 1px solid var(--border);
+                overflow-y: auto;
+                overflow-x: hidden;
+                padding: 24px 0;
+                z-index: 100;
+                transition: transform 0.25s ease;
+            }
+            body.nav-collapsed nav {
+                transform: translateX(calc(-1 * var(--nav-width)));
+            }
+            nav .nav-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 12px 16px 20px;
+                border-bottom: 1px solid var(--border);
+                margin-bottom: 0;
+            }
+            nav .logo {
+                font-size: 15px;
+                font-weight: 500;
+                padding: 0;
+                border-bottom: none;
+                color: var(--purple-600);
+                flex: 1;
+                min-width: 0;
+            }
+            .nav-toggle {
+                position: fixed;
+                left: calc(var(--nav-width) - 1px);
+                top: 50%;
+                transform: translateY(-50%);
+                width: 24px;
+                height: 48px;
+                padding: 0;
+                border: 1px solid var(--border);
+                border-left: none;
+                border-radius: 0 8px 8px 0;
+                background: var(--card);
+                color: var(--text3);
+                cursor: pointer;
+                z-index: 101;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition:
+                    left 0.25s ease,
+                    color 0.15s ease,
+                    background 0.15s ease;
+            }
+            .nav-toggle:hover {
+                color: var(--purple-600);
+                background: var(--purple-50);
+            }
+            body.nav-collapsed .nav-toggle {
+                left: 0;
+                border-left: 1px solid var(--border);
+            }
+            .nav-toggle svg {
+                width: 14px;
+                height: 14px;
+                transition: transform 0.25s ease;
+            }
+            body.nav-collapsed .nav-toggle svg {
+                transform: rotate(180deg);
+            }
+            nav a {
+                display: block;
+                padding: 8px 20px;
+                font-size: 13px;
+                color: var(--text2);
+                text-decoration: none;
+                transition: all 0.15s;
+                border-left: 3px solid transparent;
+            }
+            nav a:hover,
+            nav a.active {
+                color: var(--purple-600);
+                background: var(--purple-50);
+                border-left-color: var(--purple-400);
+            }
+            nav .sec {
+                font-size: 11px;
+                font-weight: 500;
+                color: var(--text3);
+                padding: 16px 20px 4px;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+            .main-wrap {
+                margin-left: var(--nav-width);
+                min-height: 100vh;
+                display: flex;
+                justify-content: center;
+                transition: margin-left 0.25s ease;
+            }
+            body.nav-collapsed .main-wrap {
+                margin-left: 0;
+            }
+            main {
+                width: 100%;
+                max-width: 960px;
+                padding: 0 48px 80px;
+            }
+            .hero {
+                padding: 60px 0 40px;
+                border-bottom: 1px solid var(--border);
+                margin-bottom: 48px;
+            }
+            .hero .meta {
+                font-size: 12px;
+                color: var(--text3);
+                margin-top: 12px;
+            }
+            .hero .meta + .meta {
+                margin-top: 4px;
+            }
+            .hero .meta a {
+                color: var(--purple-400);
+                text-decoration: none;
+            }
+            .hero .meta a:hover {
+                text-decoration: underline;
+            }
+            .hero-social {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                margin-left: 6px;
+                vertical-align: middle;
+            }
+            .hero-social a {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 22px;
+                height: 22px;
+                border-radius: 5px;
+                transition: background 0.15s ease;
+            }
+            .hero-social a:hover {
+                text-decoration: none;
+                background: var(--gray-50);
+            }
+            .hero-social img {
+                width: 16px;
+                height: 16px;
+                display: block;
+                object-fit: contain;
+                opacity: 0.78;
+                transition:
+                    opacity 0.15s ease,
+                    transform 0.15s ease;
+            }
+            .hero-social a:hover img {
+                opacity: 1;
+                transform: scale(1.08);
+            }
+            .hero h1 {
+                font-size: 28px;
+                font-weight: 500;
+                color: var(--purple-800);
+                margin-bottom: 8px;
+            }
+            .hero .subtitle {
+                font-size: 15px;
+                color: var(--text2);
+            }
+            .section {
+                margin-bottom: 56px;
+                scroll-margin-top: 24px;
+            }
+            .section h2 {
+                font-size: 22px;
+                font-weight: 500;
+                color: var(--text);
+                margin-bottom: 16px;
+                padding-bottom: 8px;
+                border-bottom: 2px solid var(--purple-100);
+            }
+            .section h3 {
+                font-size: 16px;
+                font-weight: 500;
+                color: var(--text);
+                margin: 24px 0 12px;
+            }
+            .section p,
+            .section li {
+                font-size: 14px;
+                color: var(--text2);
+                line-height: 1.8;
+                margin-bottom: 8px;
+            }
+            .section ul,
+            .section ol {
+                padding-left: 20px;
+                margin-bottom: 12px;
+            }
+            .section strong {
+                color: var(--text);
+                font-weight: 500;
+            }
+            .card {
+                background: var(--card);
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                padding: 24px;
+                margin-bottom: 16px;
+            }
+            .card-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 16px;
+            }
+            @media (max-width: 800px) {
+                .card-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 13px;
+                margin: 12px 0;
+            }
+            th {
+                text-align: left;
+                font-weight: 500;
+                background: var(--gray-50);
+                padding: 10px 12px;
+                border-bottom: 2px solid var(--border);
+            }
+            td {
+                padding: 10px 12px;
+                border-bottom: 1px solid var(--border);
+            }
+            .tag {
+                display: inline-block;
+                padding: 2px 8px;
+                border-radius: 4px;
+                font-size: 12px;
+                font-weight: 500;
+            }
+            .tag-purple {
+                background: var(--purple-50);
+                color: var(--purple-600);
+            }
+            .tag-teal {
+                background: var(--teal-50);
+                color: var(--teal-600);
+            }
+            .tag-coral {
+                background: var(--coral-50);
+                color: var(--coral-600);
+            }
+            .tag-blue {
+                background: var(--blue-50);
+                color: var(--blue-600);
+            }
+            .tag-amber {
+                background: var(--amber-50);
+                color: var(--amber-400);
+            }
+            .tag-red {
+                background: var(--red-50);
+                color: var(--red-400);
+            }
+            .tag-green {
+                background: var(--green-50);
+                color: var(--green-600);
+            }
+            .quote {
+                border-left: 3px solid var(--purple-400);
+                padding: 12px 16px;
+                margin: 16px 0;
+                background: var(--purple-50);
+                border-radius: 0 8px 8px 0;
+                font-size: 14px;
+                color: var(--purple-800);
+            }
+            .checklist {
+                list-style: none;
+                padding: 0 !important;
+            }
+            .checklist li {
+                padding: 6px 0;
+                display: flex;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            .checklist li::before {
+                content: "";
+                flex-shrink: 0;
+                width: 16px;
+                height: 16px;
+                border: 2px solid var(--gray-200);
+                border-radius: 3px;
+                margin-top: 3px;
+            }
+            .viz-container {
+                margin: 20px 0;
+                text-align: center;
+                border-radius: var(--radius);
+                background: var(--card);
+                border: 1px solid var(--border);
+                padding: 12px;
+                overflow: hidden;
+            }
+            .viz-container svg {
+                max-width: 100%;
+                height: auto;
+            }
+            .figcaption {
+                font-size: 12px;
+                color: var(--text3);
+                margin-top: 4px;
+            }
+            .flow-step {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 12px 16px;
+                background: var(--card);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                margin-bottom: 8px;
+            }
+            .flow-step .num {
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                flex-shrink: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                font-weight: 500;
+                color: #fff;
+            }
+            .flow-step .content {
+                flex: 1;
+            }
+            .flow-step .title {
+                font-size: 14px;
+                font-weight: 500;
+                color: var(--text);
+            }
+            .flow-step .desc {
+                font-size: 13px;
+                color: var(--text2);
+            }
+            .mistake-row {
+                display: grid;
+                grid-template-columns: 1fr 40px 1fr;
+                gap: 12px;
+                align-items: center;
+                padding: 12px;
+                border-bottom: 1px solid var(--border);
+            }
+            .mistake-row:last-child {
+                border-bottom: none;
+            }
+            .mistake-row .wrong {
+                background: var(--red-50);
+                padding: 10px 12px;
+                border-radius: 8px;
+                font-size: 13px;
+                color: var(--red-400);
+            }
+            .mistake-row .correct {
+                background: var(--green-50);
+                padding: 10px 12px;
+                border-radius: 8px;
+                font-size: 13px;
+                color: var(--green-600);
+            }
+            .mistake-row .arrow {
+                text-align: center;
+                font-size: 18px;
+                color: var(--text3);
+            }
+            .case-card {
+                background: var(--card);
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                padding: 16px;
+                margin-bottom: 12px;
+            }
+            .case-card h4 {
+                font-size: 14px;
+                font-weight: 500;
+                margin-bottom: 4px;
+            }
+            .case-card p {
+                font-size: 13px;
+                color: var(--text2);
+            }
+            .three-col {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 16px;
+            }
+            #ch4 {
+                padding-inline: 24px;
+            }
+            #ch4 .viz-container {
+                padding: 16px 28px;
+            }
+            #ch4 .three-col {
+                gap: 20px;
+            }
+            @media (max-width: 800px) {
+                .three-col {
+                    grid-template-columns: 1fr;
+                }
+                #ch4 {
+                    padding-inline: 8px;
+                }
+                #ch4 .viz-container {
+                    padding: 12px 16px;
+                }
+            }
+            svg .th {
+                font-family: var(--font-sans);
+            }
+            svg .ts {
+                font-family: var(--font-sans);
+            }
+        </style>
+    </head>
+    <body>
+        <button
+            type="button"
+            class="nav-toggle"
+            id="navToggle"
+            aria-label="收起导航菜单"
+            aria-expanded="true"
+            aria-controls="sidebar"
+        >
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                    d="M15 6L9 12L15 18"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+            </svg>
+        </button>
+        <nav id="sidebar">
+            <div class="nav-header">
+                <div class="logo">Claude Code 课件</div>
+            </div>
+            <a href="#hero" class="active">概览</a>
+            <div class="sec">核心概念</div>
+            <a href="#ch1">一、鞍具生态系统</a>
+            <a href="#ch2">二、五层组件详解</a>
+            <a href="#ch3">三、Agentic Search</a>
+            <div class="sec">进阶能力</div>
+            <a href="#ch4">四、三种配置模式</a>
+            <div class="sec">实战落地</div>
+            <a href="#ch5">五、实施路线图</a>
+            <a href="#ch6">六、常见误区</a>
+            <a href="#ch7">七、案例 + 检查清单</a>
+        </nav>
+
+        <div class="main-wrap">
+        <main>
+            <div class="hero" id="hero">
+                <h1>Claude Code 在大型代码库中的最佳实践</h1>
+                <p class="meta">
+                    基于 Claude 官方博客 ·
+                    <a
+                        href="https://claude.com/blog/how-claude-code-works-in-large-codebases-best-practices-and-where-to-start"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        >阅读原文</a
+                    >
+                </p>
+                <p class="meta">
+                    讲解：AI随风随风
+                    <span class="hero-social">
+                        <a
+                            href="https://space.bilibili.com/481246113"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="B站"
+                            title="B站"
+                        >
+                            <img
+                                src="assets/logos/bilibili.svg"
+                                alt="B站"
+                                width="16"
+                                height="16"
+                            />
+                        </a>
+                        <a
+                            href="https://www.douyin.com/user/MS4wLjABAAAAJtFDFLcbX5a9GfEepMjAGq_wLkxwkKcInPp4iN9jY2ACKlRHH0T98AZMp7_AHTLW"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="抖音"
+                            title="抖音"
+                        >
+                            <img
+                                src="assets/logos/douyin.svg"
+                                alt="抖音"
+                                width="16"
+                                height="16"
+                            />
+                        </a>
+                        <a
+                            href="https://www.xiaohongshu.com/user/profile/615ee0a5000000000201daa3"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="小红书"
+                            title="小红书"
+                        >
+                            <img
+                                src="assets/logos/xiaohongshu.svg"
+                                alt="小红书"
+                                width="16"
+                                height="16"
+                            />
+                        </a>
+                        <a
+                            href="https://www.youtube.com/@AI%E9%9A%8F%E9%A3%8E"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="YouTube"
+                            title="YouTube"
+                        >
+                            <img
+                                src="assets/logos/youtube.svg"
+                                alt="YouTube"
+                                width="16"
+                                height="16"
+                            />
+                        </a>
+                    </span>
+                </p>
+            </div>
+
+            <!-- ==================== 第一章 ==================== -->
+            <div class="section" id="ch1">
+                <h2>一、核心认知：决定成败的不是模型本身，而是"Harness"</h2>
+                <div class="quote">
+                    成功的 Claude Code
+                    大规模部署，决定性因素不仅在于模型本身，更在于围绕模型构建的生态系统。
+                </div>
+                <p>
+                    这个生态系统被作者称为<strong>"鞍具"（Harness）</strong>——就像一匹好马需要好的鞍具才能发挥潜能一样，Claude
+                    Code 也需要精心搭建的鞍具才能在百万行代码的仓库中高效工作。
+                </p>
+
+                <h3>鞍具生态系统全景图</h3>
+                <div class="viz-container">
+                    <svg
+                        viewBox="0 0 680 480"
+                        width="680"
+                        role="img"
+                        aria-label="鞍具生态系统结构图"
+                    >
+                        <defs>
+                            <marker
+                                id="a1"
+                                viewBox="0 0 10 10"
+                                refX="8"
+                                refY="5"
+                                markerWidth="6"
+                                markerHeight="6"
+                                orient="auto"
+                            >
+                                <path
+                                    d="M2 1L8 5L2 9"
+                                    fill="none"
+                                    stroke="var(--text2)"
+                                    stroke-width="1.5"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </marker>
+                        </defs>
+                        <rect
+                            x="240"
+                            y="30"
+                            width="200"
+                            height="48"
+                            rx="24"
+                            fill="var(--purple-400)"
+                        />
+                        <text
+                            x="340"
+                            y="59"
+                            text-anchor="middle"
+                            font-size="15"
+                            font-weight="500"
+                            fill="#fff"
+                        >
+                            鞍 具 (Harness)
+                        </text>
+                        <text
+                            x="340"
+                            y="96"
+                            text-anchor="middle"
+                            font-size="12"
+                            fill="var(--text3)"
+                        >
+                            Claude Code 的生态系统 = 五层核心 + 两大扩展能力
+                        </text>
+
+                        <!-- 5 core components in a row -->
+                        <g transform="translate(40, 120)">
+                            <rect
+                                x="0"
+                                y="0"
+                                width="112"
+                                height="80"
+                                rx="10"
+                                fill="var(--purple-50)"
+                                stroke="var(--purple-100)"
+                                stroke-width="0.5"
+                            />
+                            <text
+                                x="56"
+                                y="28"
+                                text-anchor="middle"
+                                font-size="13"
+                                font-weight="500"
+                                fill="var(--purple-600)"
+                            >
+                                CLAUDE.md
+                            </text>
+                            <text
+                                x="56"
+                                y="44"
+                                text-anchor="middle"
+                                font-size="10"
+                                fill="var(--text3)"
+                            >
+                                上下文文件
+                            </text>
+                            <text
+                                x="56"
+                                y="62"
+                                text-anchor="middle"
+                                font-size="10"
+                                fill="var(--text2)"
+                            >
+                                告诉规矩和结构
+                            </text>
+                        </g>
+                        <g transform="translate(172, 120)">
+                            <rect
+                                x="0"
+                                y="0"
+                                width="112"
+                                height="80"
+                                rx="10"
+                                fill="var(--teal-50)"
+                                stroke="var(--teal-100)"
+                                stroke-width="0.5"
+                            />
+                            <text
+                                x="56"
+                                y="28"
+                                text-anchor="middle"
+                                font-size="13"
+                                font-weight="500"
+                                fill="var(--teal-600)"
+                            >
+                                Hooks
+                            </text>
+                            <text
+                                x="56"
+                                y="44"
+                                text-anchor="middle"
+                                font-size="10"
+                                fill="var(--text3)"
+                            >
+                                钩子
+                            </text>
+                            <text
+                                x="56"
+                                y="62"
+                                text-anchor="middle"
+                                font-size="10"
+                                fill="var(--text2)"
+                            >
+                                自动化的手脚
+                            </text>
+                        </g>
+                        <g transform="translate(304, 120)">
+                            <rect
+                                x="0"
+                                y="0"
+                                width="112"
+                                height="80"
+                                rx="10"
+                                fill="var(--coral-50)"
+                                stroke="var(--coral-400)"
+                                stroke-width="0.5"
+                                opacity=".4"
+                            />
+                            <text
+                                x="56"
+                                y="28"
+                                text-anchor="middle"
+                                font-size="13"
+                                font-weight="500"
+                                fill="var(--coral-600)"
+                            >
+                                Skills
+                            </text>
+                            <text
+                                x="56"
+                                y="44"
+                                text-anchor="middle"
+                                font-size="10"
+                                fill="var(--text3)"
+                            >
+                                技能
+                            </text>
+                            <text
+                                x="56"
+                                y="62"
+                                text-anchor="middle"
+                                font-size="10"
+                                fill="var(--text2)"
+                            >
+                                专业工作流包
+                            </text>
+                        </g>
+                        <g transform="translate(436, 120)">
+                            <rect
+                                x="0"
+                                y="0"
+                                width="112"
+                                height="80"
+                                rx="10"
+                                fill="var(--blue-50)"
+                                stroke="var(--blue-100)"
+                                stroke-width="0.5"
+                            />
+                            <text
+                                x="56"
+                                y="28"
+                                text-anchor="middle"
+                                font-size="13"
+                                font-weight="500"
+                                fill="var(--blue-600)"
+                            >
+                                Plugins
+                            </text>
+                            <text
+                                x="56"
+                                y="44"
+                                text-anchor="middle"
+                                font-size="10"
+                                fill="var(--text3)"
+                            >
+                                插件
+                            </text>
+                            <text
+                                x="56"
+                                y="62"
+                                text-anchor="middle"
+                                font-size="10"
+                                fill="var(--text2)"
+                            >
+                                打包分发
+                            </text>
+                        </g>
+                        <g transform="translate(568, 120)">
+                            <rect
+                                x="0"
+                                y="0"
+                                width="112"
+                                height="80"
+                                rx="10"
+                                fill="var(--amber-50)"
+                                stroke="var(--amber-400)"
+                                stroke-width="0.5"
+                                opacity=".4"
+                            />
+                            <text
+                                x="56"
+                                y="28"
+                                text-anchor="middle"
+                                font-size="13"
+                                font-weight="500"
+                                fill="var(--amber-400)"
+                            >
+                                MCP
+                            </text>
+                            <text
+                                x="56"
+                                y="44"
+                                text-anchor="middle"
+                                font-size="10"
+                                fill="var(--text3)"
+                            >
+                                服务器
+                            </text>
+                            <text
+                                x="56"
+                                y="62"
+                                text-anchor="middle"
+                                font-size="10"
+                                fill="var(--text2)"
+                            >
+                                连接内部系统
+                            </text>
+                        </g>
+
+                        <!-- Extra 2 -->
+                        <g transform="translate(120, 228)">
+                            <rect
+                                x="0"
+                                y="0"
+                                width="200"
+                                height="60"
+                                rx="10"
+                                fill="var(--pink-50)"
+                                stroke="var(--pink-400)"
+                                stroke-width="0.5"
+                                opacity=".4"
+                                stroke-dasharray="4 2"
+                            />
+                            <text
+                                x="100"
+                                y="28"
+                                text-anchor="middle"
+                                font-size="13"
+                                font-weight="500"
+                                fill="var(--pink-400)"
+                            >
+                                LSP 集成
+                            </text>
+                            <text
+                                x="100"
+                                y="46"
+                                text-anchor="middle"
+                                font-size="11"
+                                fill="var(--text2)"
+                            >
+                                符号级代码导航
+                            </text>
+                        </g>
+                        <g transform="translate(360, 228)">
+                            <rect
+                                x="0"
+                                y="0"
+                                width="200"
+                                height="60"
+                                rx="10"
+                                fill="var(--green-50)"
+                                stroke="var(--green-100)"
+                                stroke-width="0.5"
+                            />
+                            <text
+                                x="100"
+                                y="28"
+                                text-anchor="middle"
+                                font-size="13"
+                                font-weight="500"
+                                fill="var(--green-600)"
+                            >
+                                Subagents
+                            </text>
+                            <text
+                                x="100"
+                                y="46"
+                                text-anchor="middle"
+                                font-size="11"
+                                fill="var(--text2)"
+                            >
+                                子代理 · 探索与编辑分离
+                            </text>
+                        </g>
+
+                        <!-- Priority label -->
+                        <rect
+                            x="160"
+                            y="320"
+                            width="360"
+                            height="36"
+                            rx="8"
+                            fill="var(--purple-50)"
+                            stroke="var(--purple-100)"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            x="340"
+                            y="343"
+                            text-anchor="middle"
+                            font-size="12"
+                            fill="var(--purple-600)"
+                        >
+                            建议构建顺序：CLAUDE.md → Hooks → Skills → Plugins →
+                            MCP → LSP + Subagents
+                        </text>
+
+                        <!-- Bottom note -->
+                        <text
+                            x="340"
+                            y="380"
+                            text-anchor="middle"
+                            font-size="11"
+                            fill="var(--text3)"
+                        >
+                            注：Skills 和 MCP 用虚线框表示 —
+                            它们按需加载，不是始终在上下文中
+                        </text>
+                    </svg>
+                </div>
+
+                <h3>鞍具组件速查表</h3>
+                <table>
+                    <tr>
+                        <th>组件</th>
+                        <th>是什么</th>
+                        <th>何时加载</th>
+                        <th>最适用场景</th>
+                        <th>常见误区</th>
+                    </tr>
+                    <tr>
+                        <td><strong>CLAUDE.md</strong></td>
+                        <td>Claude 自动读取的上下文文件</td>
+                        <td>每次会话</td>
+                        <td>项目特定约定、代码库知识</td>
+                        <td>把应放在 Skill 中的可复用专业知识放进来</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Hooks</strong></td>
+                        <td>在关键时刻运行的脚本</td>
+                        <td>由事件触发</td>
+                        <td>自动化一致行为、捕获会话学习</td>
+                        <td>用提示词做应该自动运行的事情</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Skills</strong></td>
+                        <td>针对特定任务类型的打包指令</td>
+                        <td>按需加载，当相关时</td>
+                        <td>跨会话和项目的可复用专业知识</td>
+                        <td>把所有内容都加载到 CLAUDE.md 中</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Plugins</strong></td>
+                        <td>打包的技能、钩子和 MCP 配置</td>
+                        <td>配置后始终可用</td>
+                        <td>在组织内分发有效的设置</td>
+                        <td>让好的设置停留在部落知识中</td>
+                    </tr>
+                    <tr>
+                        <td><strong>LSP*</strong></td>
+                        <td>通过语言特定服务器提供实时代码智能</td>
+                        <td>配置后始终可用</td>
+                        <td>符号级导航和类型语言中的自动错误检测</td>
+                        <td>认为它是自动启用的</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MCP 服务器</strong></td>
+                        <td>连接外部工具和数据的接口</td>
+                        <td>配置后始终可用</td>
+                        <td>让 Claude 访问无法直接触及的内部工具</td>
+                        <td>在基础配置还没搞好之前就构建 MCP 连接</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Subagents*</strong></td>
+                        <td>针对特定任务的独立 Claude 实例</td>
+                        <td>被调用时</td>
+                        <td>将探索与编辑分离、并行工作</td>
+                        <td>在同一会话中运行探索和编辑</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- ==================== 第二章 ==================== -->
+            <div class="section" id="ch2">
+                <h2>二、五层鞍具组件详解</h2>
+
+                <h3>① CLAUDE.md — 最基础、最重要的配置</h3>
+                <p>
+                    CLAUDE.md 是每个会话开始时自动读取的文件，相当于给 Claude
+                    的一张"小纸条"。最佳实践是<strong>分层配置</strong>：
+                </p>
+
+                <div class="viz-container">
+                    <svg
+                        viewBox="0 0 680 540"
+                        width="100%"
+                        role="img"
+                        aria-label="CLAUDE.md 分层配置与自动加载示意"
+                    >
+                        <title>CLAUDE.md 分层配置与自动加载示意</title>
+                        <desc>
+                            展示 CLAUDE.md 在项目中的分层结构以及 Claude
+                            移动时自动加载沿途文件的机制
+                        </desc>
+                        <defs>
+                            <marker
+                                id="arrow"
+                                viewBox="0 0 10 10"
+                                refX="8"
+                                refY="5"
+                                markerWidth="6"
+                                markerHeight="6"
+                                orient="auto-start-reverse"
+                            >
+                                <path
+                                    d="M2 1L8 5L2 9"
+                                    fill="none"
+                                    stroke="context-stroke"
+                                    stroke-width="1.5"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </marker>
+                        </defs>
+
+                        <text
+                            class="th"
+                            x="340"
+                            y="28"
+                            text-anchor="middle"
+                            fill="#1a1a2e"
+                            font-size="15"
+                            font-weight="500"
+                        >
+                            CLAUDE.md 分层配置与自动加载
+                        </text>
+                        <text
+                            class="ts"
+                            x="340"
+                            y="46"
+                            text-anchor="middle"
+                            fill="#888"
+                            font-size="11"
+                        >
+                            Claude 移动到子目录时，自动叠加沿途所有 CLAUDE.md
+                            的上下文
+                        </text>
+
+                        <!-- 左侧：目录树 -->
+                        <rect
+                            x="30"
+                            y="62"
+                            width="220"
+                            height="460"
+                            rx="12"
+                            fill="#F1EFE8"
+                            stroke="#D3D1C7"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="140"
+                            y="82"
+                            text-anchor="middle"
+                            fill="#5F5E5A"
+                            font-size="12"
+                            font-weight="500"
+                        >
+                            项目目录结构
+                        </text>
+
+                        <!-- 根目录 -->
+                        <rect
+                            x="44"
+                            y="96"
+                            width="192"
+                            height="32"
+                            rx="6"
+                            fill="#1D9E75"
+                        />
+                        <text
+                            class="ts"
+                            x="140"
+                            y="112"
+                            text-anchor="middle"
+                            dominant-baseline="central"
+                            fill="#fff"
+                            font-size="11"
+                        >
+                            📁 项目根 /
+                        </text>
+
+                        <rect
+                            x="56"
+                            y="138"
+                            width="176"
+                            height="26"
+                            rx="5"
+                            fill="#5DCAA5"
+                            stroke="#1D9E75"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="144"
+                            y="151"
+                            text-anchor="middle"
+                            dominant-baseline="central"
+                            fill="#085041"
+                            font-size="10"
+                        >
+                            📄 CLAUDE.md ← 全局架构 + 陷阱
+                        </text>
+
+                        <!-- src -->
+                        <rect
+                            x="56"
+                            y="176"
+                            width="192"
+                            height="28"
+                            rx="5"
+                            fill="#EEEDFE"
+                            stroke="#CECBF6"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="152"
+                            y="190"
+                            text-anchor="middle"
+                            dominant-baseline="central"
+                            fill="#3C3489"
+                            font-size="10"
+                        >
+                            📁 src/
+                        </text>
+                        <rect
+                            x="72"
+                            y="212"
+                            width="160"
+                            height="26"
+                            rx="5"
+                            fill="#CECBF6"
+                            stroke="#7F77DD"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="152"
+                            y="225"
+                            text-anchor="middle"
+                            dominant-baseline="central"
+                            fill="#3C3489"
+                            font-size="10"
+                        >
+                            📄 CLAUDE.md ← src 约定
+                        </text>
+
+                        <!-- src/api -->
+                        <rect
+                            x="72"
+                            y="250"
+                            width="176"
+                            height="28"
+                            rx="5"
+                            fill="#E6F1FB"
+                            stroke="#B5D4F4"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="160"
+                            y="264"
+                            text-anchor="middle"
+                            dominant-baseline="central"
+                            fill="#0C447C"
+                            font-size="10"
+                        >
+                            📁 api/
+                        </text>
+                        <rect
+                            x="88"
+                            y="286"
+                            width="148"
+                            height="26"
+                            rx="5"
+                            fill="#B5D4F4"
+                            stroke="#378ADD"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="162"
+                            y="299"
+                            text-anchor="middle"
+                            dominant-baseline="central"
+                            fill="#0C447C"
+                            font-size="10"
+                        >
+                            📄 CLAUDE.md ← API 规范
+                        </text>
+
+                        <!-- payments -->
+                        <rect
+                            x="72"
+                            y="324"
+                            width="176"
+                            height="28"
+                            rx="5"
+                            fill="#FAEEDA"
+                            stroke="#FAC775"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="160"
+                            y="338"
+                            text-anchor="middle"
+                            dominant-baseline="central"
+                            fill="#633806"
+                            font-size="10"
+                        >
+                            📁 payments/
+                        </text>
+                        <rect
+                            x="88"
+                            y="360"
+                            width="148"
+                            height="26"
+                            rx="5"
+                            fill="#FAC775"
+                            stroke="#BA7517"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="162"
+                            y="373"
+                            text-anchor="middle"
+                            dominant-baseline="central"
+                            fill="#633806"
+                            font-size="10"
+                        >
+                            📄 CLAUDE.md ← 支付规则
+                        </text>
+
+                        <!-- tests -->
+                        <rect
+                            x="56"
+                            y="400"
+                            width="192"
+                            height="28"
+                            rx="5"
+                            fill="#EAF3DE"
+                            stroke="#C0DD97"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="152"
+                            y="414"
+                            text-anchor="middle"
+                            dominant-baseline="central"
+                            fill="#27500A"
+                            font-size="10"
+                        >
+                            📁 tests/
+                        </text>
+                        <rect
+                            x="72"
+                            y="436"
+                            width="160"
+                            height="26"
+                            rx="5"
+                            fill="#C0DD97"
+                            stroke="#639922"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="152"
+                            y="449"
+                            text-anchor="middle"
+                            dominant-baseline="central"
+                            fill="#27500A"
+                            font-size="10"
+                        >
+                            📄 CLAUDE.md ← 测试命令
+                        </text>
+
+                        <!-- 右侧：上下文叠加示意 -->
+                        <rect
+                            x="280"
+                            y="62"
+                            width="380"
+                            height="460"
+                            rx="12"
+                            fill="#fff"
+                            stroke="#D3D1C7"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="470"
+                            y="82"
+                            text-anchor="middle"
+                            fill="#5F5E5A"
+                            font-size="12"
+                            font-weight="500"
+                        >
+                            Claude 的上下文叠加过程
+                        </text>
+
+                        <!-- 场景1：在根目录 -->
+                        <rect
+                            x="300"
+                            y="96"
+                            width="340"
+                            height="52"
+                            rx="8"
+                            fill="#E1F5EE"
+                            stroke="#9FE1CB"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="310"
+                            y="112"
+                            fill="#085041"
+                            font-size="11"
+                            font-weight="500"
+                        >
+                            场景 A：在根目录启动
+                        </text>
+                        <text
+                            class="ts"
+                            x="310"
+                            y="132"
+                            fill="#0F6E56"
+                            font-size="10"
+                        >
+                            读取：根目录 CLAUDE.md（1 层上下文）
+                        </text>
+
+                        <!-- 场景2：在 src/ -->
+                        <rect
+                            x="300"
+                            y="160"
+                            width="340"
+                            height="72"
+                            rx="8"
+                            fill="#f5f0ff"
+                            stroke="#CECBF6"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="310"
+                            y="176"
+                            fill="#3C3489"
+                            font-size="11"
+                            font-weight="500"
+                        >
+                            场景 B：移动到 src/ 目录
+                        </text>
+                        <text
+                            class="ts"
+                            x="310"
+                            y="196"
+                            fill="#534AB7"
+                            font-size="10"
+                        >
+                            读取：根目录 CLAUDE.md + src/CLAUDE.md
+                        </text>
+                        <text
+                            class="ts"
+                            x="310"
+                            y="216"
+                            fill="#534AB7"
+                            font-size="10"
+                        >
+                            ↑ 上下文自动叠加（2 层）
+                        </text>
+
+                        <!-- 场景3：在 src/api/ -->
+                        <rect
+                            x="300"
+                            y="244"
+                            width="340"
+                            height="92"
+                            rx="8"
+                            fill="#E6F1FB"
+                            stroke="#B5D4F4"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="310"
+                            y="260"
+                            fill="#0C447C"
+                            font-size="11"
+                            font-weight="500"
+                        >
+                            场景 C：移动到 src/api/ 目录
+                        </text>
+                        <text
+                            class="ts"
+                            x="310"
+                            y="280"
+                            fill="#185FA5"
+                            font-size="10"
+                        >
+                            读取：根目录 + src/ + api/ 三个 CLAUDE.md
+                        </text>
+                        <text
+                            class="ts"
+                            x="310"
+                            y="300"
+                            fill="#185FA5"
+                            font-size="10"
+                        >
+                            ↑ 上下文自动叠加（3 层）
+                        </text>
+                        <text
+                            class="ts"
+                            x="310"
+                            y="320"
+                            fill="#185FA5"
+                            font-size="10"
+                        >
+                            Claude 同时了解全局架构 + 源码约定 + API 规范
+                        </text>
+
+                        <!-- 场景4：在 src/payments/ -->
+                        <rect
+                            x="300"
+                            y="348"
+                            width="340"
+                            height="72"
+                            rx="8"
+                            fill="#FAEEDA"
+                            stroke="#FAC775"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="310"
+                            y="364"
+                            fill="#633806"
+                            font-size="11"
+                            font-weight="500"
+                        >
+                            场景 D：移动到 src/payments/ 目录
+                        </text>
+                        <text
+                            class="ts"
+                            x="310"
+                            y="384"
+                            fill="#854F0B"
+                            font-size="10"
+                        >
+                            读取：根目录 + src/ + payments/ 三个 CLAUDE.md
+                        </text>
+                        <text
+                            class="ts"
+                            x="310"
+                            y="404"
+                            fill="#854F0B"
+                            font-size="10"
+                        >
+                            ↑ 部署 Skill 可绑定到此路径，仅在此时加载
+                        </text>
+
+                        <!-- 关键提示 -->
+                        <rect
+                            x="300"
+                            y="432"
+                            width="340"
+                            height="72"
+                            rx="8"
+                            fill="#FCEBEB"
+                            stroke="#F7C1C1"
+                            stroke-width="1"
+                        />
+                        <text
+                            class="ts"
+                            x="470"
+                            y="450"
+                            text-anchor="middle"
+                            fill="#A32D2D"
+                            font-size="11"
+                            font-weight="500"
+                        >
+                            关键设计原则
+                        </text>
+                        <text
+                            class="ts"
+                            x="310"
+                            y="470"
+                            fill="#791F1F"
+                            font-size="10"
+                        >
+                            • 根目录只放最重要的指针和陷阱，保持精炼
+                        </text>
+                        <text
+                            class="ts"
+                            x="310"
+                            y="488"
+                            fill="#791F1F"
+                            font-size="10"
+                        >
+                            • 子目录放本地约定，Claude 会自动向上查找
+                        </text>
+                        <text
+                            class="ts"
+                            x="310"
+                            y="506"
+                            fill="#791F1F"
+                            font-size="10"
+                        >
+                            • 在子目录初始化任务，而非从根目录开始
+                        </text>
+
+                        <!-- 连接箭头 -->
+                        <path
+                            d="M250 145 L296 125"
+                            stroke="#5DCAA5"
+                            stroke-width="1"
+                            marker-end="url(#arrow)"
+                            fill="none"
+                        />
+                        <path
+                            d="M250 225 L296 196"
+                            stroke="#7F77DD"
+                            stroke-width="1"
+                            marker-end="url(#arrow)"
+                            fill="none"
+                        />
+                        <path
+                            d="M260 299 L296 280"
+                            stroke="#378ADD"
+                            stroke-width="1"
+                            marker-end="url(#arrow)"
+                            fill="none"
+                        />
+                        <path
+                            d="M260 373 L296 380"
+                            stroke="#BA7517"
+                            stroke-width="1"
+                            marker-end="url(#arrow)"
+                            fill="none"
+                        />
+                    </svg>
+                    <div class="figcaption">
+                        左侧：分层目录结构，每个子目录维护自己的
+                        CLAUDE.md；右侧：Claude 移动时自动叠加上下文的过程。
+                    </div>
+                </div>
+
+                <h3>② Hooks — 自动化的手脚</h3>
+                <p>
+                    Hooks
+                    是在关键事件（会话开始/结束、文件写入前/后）触发自动执行的脚本。
+                </p>
+                <div class="card-grid">
+                    <div class="card">
+                        <strong>会话结束 Hook</strong><br /><span
+                            style="font-size: 13px; color: var(--text2)"
+                            >自动记录本次会话的教训到经验文件中</span
+                        >
+                    </div>
+                    <div class="card">
+                        <strong>文件写入前 Hook</strong><br /><span
+                            style="font-size: 13px; color: var(--text2)"
+                            >自动运行 lint/format 检查</span
+                        >
+                    </div>
+                    <div class="card">
+                        <strong>文件写入后 Hook</strong><br /><span
+                            style="font-size: 13px; color: var(--text2)"
+                            >自动更新相关文档或生成变更日志</span
+                        >
+                    </div>
+                    <div class="card">
+                        <strong>⚠️ 常见误区</strong><br /><span
+                            style="font-size: 13px; color: var(--text2)"
+                            >用 Hook 写指令指导 Claude（那是 CLAUDE.md
+                            的工作）</span
+                        >
+                    </div>
+                </div>
+
+                <h3>③ Skills — 可复用的专业知识包</h3>
+                <p>
+                    <strong
+                        >核心设计理念：渐进式披露（Progressive
+                        Disclosure）</strong
+                    >— 只在需要时才加载特定 Skill，节省上下文空间。
+                </p>
+                <div class="card-grid">
+                    <div class="card">
+                        <span class="tag tag-purple">安全审查</span><br /><span
+                            style="font-size: 13px; color: var(--text2)"
+                            >需要做安全审查时加载</span
+                        >
+                    </div>
+                    <div class="card">
+                        <span class="tag tag-teal">文档更新</span><br /><span
+                            style="font-size: 13px; color: var(--text2)"
+                            >需要更新 API 文档时加载</span
+                        >
+                    </div>
+                    <div class="card">
+                        <span class="tag tag-coral">部署流程</span><br /><span
+                            style="font-size: 13px; color: var(--text2)"
+                            >需要执行部署时加载</span
+                        >
+                    </div>
+                    <div class="card">
+                        <span class="tag tag-amber">路径绑定</span><br /><span
+                            style="font-size: 13px; color: var(--text2)"
+                            >绑定到 pay-ments/ 目录，仅在此时加载</span
+                        >
+                    </div>
+                </div>
+
+                <h3>④ Plugins — 组织级分发的利器</h3>
+                <p>
+                    把 Skills、Hooks 和 MCP
+                    配置打包成一个可安装的包，在团队内部一键分发。
+                </p>
+
+                <h3>⑤ MCP Servers — 连接内部系统的桥梁</h3>
+                <p>
+                    让 Claude 能访问内部分析平台、CI/CD 系统、知识库等外部资源。
+                </p>
+                <div
+                    class="card"
+                    style="
+                        background: var(--red-50);
+                        border-color: var(--red-400);
+                        opacity: 0.6;
+                    "
+                >
+                    <strong style="color: var(--red-400)">⚠️ 常见误区：</strong
+                    ><span style="font-size: 13px; color: var(--text2)"
+                        >基础配置（CLAUDE.md）没做好就上 MCP。应该 CLAUDE.md →
+                        Hooks → Skills → 再 MCP。</span
+                    >
+                </div>
+
+                <h3>构建优先级金字塔</h3>
+                <div class="viz-container">
+                    <svg viewBox="0 0 680 560" width="100%" role="img" aria-label="鞍具构建优先级金字塔">
+                        <title>鞍具构建优先级金字塔</title>
+                        <desc>从底层基础设施到顶层扩展，展示鞍具组件的构建优先级和依赖关系</desc>
+                        <defs>
+                            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5"
+                                markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke"
+                                    stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </marker>
+                        </defs>
+
+                        <text class="th" x="340" y="28" text-anchor="middle" fill="#1a1a2e" font-size="15" font-weight="500">鞍具构建优先级金字塔</text>
+                        <text class="ts" x="340" y="46" text-anchor="middle" fill="#888" font-size="11">从底层往上逐级构建，每一层都是上层的基础</text>
+
+                        <!-- 第 5 层（顶部）：MCP + Subagents -->
+                        <polygon points="340,64 200,128 480,128" fill="#FBEAF0" stroke="#D4537E" stroke-width="0.5"/>
+                        <text class="ts" x="340" y="100" text-anchor="middle" dominant-baseline="central" fill="#D4537E" font-size="12" font-weight="500">MCP Servers + Subagents</text>
+                        <text class="ts" x="340" y="118" text-anchor="middle" fill="#72243E" font-size="10">扩展外部连接 &amp; 子代理</text>
+
+                        <!-- 第 4 层：Plugins -->
+                        <polygon points="200,132 140,196 540,196 480,132" fill="#EAF3DE" stroke="#639922" stroke-width="0.5"/>
+                        <text class="ts" x="340" y="156" text-anchor="middle" dominant-baseline="central" fill="#639922" font-size="12" font-weight="500">Plugins（插件）</text>
+                        <text class="ts" x="340" y="174" text-anchor="middle" fill="#27500A" font-size="10">打包 Skills + Hooks + MCP → 一键分发</text>
+
+                        <!-- 第 3 层：Skills -->
+                        <polygon points="140,200 80,264 600,264 540,200" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+                        <text class="ts" x="340" y="224" text-anchor="middle" dominant-baseline="central" fill="#BA7517" font-size="12" font-weight="500">Skills（技能）</text>
+                        <text class="ts" x="340" y="244" text-anchor="middle" fill="#633806" font-size="10">按需加载的专业工作流 · 渐进式披露</text>
+
+                        <!-- 第 2 层：Hooks -->
+                        <polygon points="80,268 40,332 640,332 600,268" fill="#E6F1FB" stroke="#378ADD" stroke-width="0.5"/>
+                        <text class="ts" x="340" y="292" text-anchor="middle" dominant-baseline="central" fill="#378ADD" font-size="12" font-weight="500">Hooks（钩子）</text>
+                        <text class="ts" x="340" y="312" text-anchor="middle" fill="#0C447C" font-size="10">事件触发的自动化脚本 · lint · format · 经验记录</text>
+
+                        <!-- 第 1 层（底部）：CLAUDE.md -->
+                        <polygon points="40,336 20,400 660,400 640,336" fill="#E1F5EE" stroke="#1D9E75" stroke-width="1.5"/>
+                        <text class="ts" x="340" y="360" text-anchor="middle" dominant-baseline="central" fill="#1D9E75" font-size="13" font-weight="500">CLAUDE.md（上下文文件）</text>
+                        <text class="ts" x="340" y="382" text-anchor="middle" fill="#085041" font-size="11">每条会话自动读取 · 代码库的"地图"和"规矩" · 一切的基础</text>
+
+                        <!-- 底座：代码库可导航性 -->
+                        <rect x="20" y="408" width="640" height="36" rx="4" fill="#5F5E5A"/>
+                        <text class="ts" x="340" y="426" text-anchor="middle" dominant-baseline="central" fill="#fff" font-size="12">代码库可导航性（目录结构清晰 · .ignore 排除噪音 · 轻量级代码地图）</text>
+
+                        <!-- 右侧标注：构建顺序 -->
+                        <g>
+                            <rect x="48" y="460" width="584" height="88" rx="10" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="0.5"/>
+                            <text class="ts" x="340" y="478" text-anchor="middle" fill="#5F5E5A" font-size="12" font-weight="500">构建顺序与理由</text>
+
+                            <text class="ts" x="68" y="498" fill="#1D9E75" font-size="10">1. CLAUDE.md → 没有上下文地图，Claude 只能盲搜，一切无从谈起</text>
+                            <text class="ts" x="68" y="514" fill="#378ADD" font-size="10">2. Hooks → 自动化检查替代手动指令，降低出错概率</text>
+                            <text class="ts" x="68" y="530" fill="#BA7517" font-size="10">3. Skills → 把专业知识做成可复用工具，而非每次手写指令</text>
+                            <text class="ts" x="68" y="546" fill="#639922" font-size="10">4. Plugins → 验证过的配置打包分发，赋能更多团队成员</text>
+                            <text class="ts" x="368" y="498" fill="#D4537E" font-size="10">5. MCP + Subagents → 连接内部系统，</text>
+                            <text class="ts" x="520" y="498" fill="#D4537E" font-size="10">处理复杂探索任务</text>
+                            <text class="ts" x="368" y="514" fill="#A32D2D" font-size="10">⚠ 在底层做好之前，不要跳到顶层</text>
+                            <text class="ts" x="368" y="530" fill="#A32D2D" font-size="10">⚠ 顶层缺少底层支撑时效果极差</text>
+                        </g>
+                    </svg>
+                </div>
+
+                <h3>两大额外能力</h3>
+                <div class="card-grid">
+                    <div class="card">
+                        <h3 style="font-size: 15px; color: var(--pink-400)">
+                            LSP 集成
+                        </h3>
+                        <p>
+                            让 Claude
+                            进行<strong>符号级别</strong>的代码导航，而不是基于文本匹配。
+                        </p>
+                        <ul>
+                            <li>"转到定义"</li>
+                            <li>"查找所有引用"</li>
+                            <li>区分不同语言中的同名函数</li>
+                            <li>在 C/C++ 大型代码库中尤其关键</li>
+                        </ul>
+                        <div
+                            style="
+                                margin-top: 8px;
+                                font-size: 12px;
+                                color: var(--red-400);
+                                background: var(--red-50);
+                                padding: 8px;
+                                border-radius: 6px;
+                            "
+                        >
+                            ⚠️ 常见误区：认为 LSP
+                            是自动集成的。需要手动安装对应的插件和语言服务器。
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 style="font-size: 15px; color: var(--green-600)">
+                            Subagents（子代理）
+                        </h3>
+                        <p>
+                            Subagent 是一个<strong>独立的 Claude 实例</strong
+                            >，拥有自己的上下文窗口。
+                        </p>
+                        <p><strong>核心价值：将探索和编辑分离。</strong></p>
+                        <ol>
+                            <li>派一个只读子代理"绘制"子系统地图</li>
+                            <li>主代理基于地图做出精确修改</li>
+                        </ol>
+                        <div
+                            style="
+                                margin-top: 8px;
+                                font-size: 12px;
+                                color: var(--text2);
+                                background: var(--green-50);
+                                padding: 8px;
+                                border-radius: 6px;
+                            "
+                        >
+                            ✅
+                            避免在同一个上下文中同时做探索和编辑，防止上下文污染
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== 第三章 ==================== -->
+            <div class="section" id="ch3">
+                <h2>三、核心工作原理：Agentic Search</h2>
+                <p>
+                    Claude Code
+                    像一名<strong>人类软件工程师</strong>那样工作——它遍历文件系统、读取文件、用
+                    grep
+                    搜索、追踪引用。它<strong>在本地机器上运行</strong>，不需要构建和维护代码索引。
+                </p>
+
+                <h3>Claude Code 的 5 步工作流</h3>
+                <div class="viz-container">
+                    <svg
+                        viewBox="0 0 680 520"
+                        width="100%"
+                        role="img"
+                        aria-label="Claude Code 工程师式工作流"
+                    >
+                        <title>Claude Code 工程师式工作流</title>
+                        <desc>
+                            展示 Claude Code 如何像工程师一样逐步理解和修改代码
+                        </desc>
+                        <defs>
+                            <marker
+                                id="arrow"
+                                viewBox="0 0 10 10"
+                                refX="8"
+                                refY="5"
+                                markerWidth="6"
+                                markerHeight="6"
+                                orient="auto-start-reverse"
+                            >
+                                <path
+                                    d="M2 1L8 5L2 9"
+                                    fill="none"
+                                    stroke="context-stroke"
+                                    stroke-width="1.5"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </marker>
+                        </defs>
+
+                        <text
+                            class="th"
+                            x="340"
+                            y="28"
+                            text-anchor="middle"
+                            fill="#1a1a2e"
+                            font-size="15"
+                            font-weight="500"
+                        >
+                            Claude Code 如何像工程师一样工作
+                        </text>
+                        <text
+                            class="ts"
+                            x="340"
+                            y="46"
+                            text-anchor="middle"
+                            fill="#888"
+                            font-size="11"
+                        >
+                            从读文档到改代码，一步步理解然后行动
+                        </text>
+
+                        <!-- 步骤 1：读文档 -->
+                        <g>
+                            <rect
+                                x="60"
+                                y="64"
+                                width="560"
+                                height="56"
+                                rx="10"
+                                fill="#E1F5EE"
+                                stroke="#9FE1CB"
+                                stroke-width="0.5"
+                            />
+                            <circle cx="84" cy="92" r="16" fill="#1D9E75" />
+                            <text
+                                class="th"
+                                x="84"
+                                y="92"
+                                text-anchor="middle"
+                                dominant-baseline="central"
+                                fill="#fff"
+                                font-size="13"
+                            >
+                                1
+                            </text>
+                            <text
+                                class="th"
+                                x="112"
+                                y="84"
+                                fill="#085041"
+                                font-size="13"
+                            >
+                                读文档 — 获取上下文地图
+                            </text>
+                            <text
+                                class="ts"
+                                x="112"
+                                y="104"
+                                fill="#0F6E56"
+                                font-size="11"
+                            >
+                                自动读取
+                                CLAUDE.md，了解项目架构、关键陷阱、代码约定
+                            </text>
+                        </g>
+                        <path
+                            d="M340 120 L340 136"
+                            stroke="#9FE1CB"
+                            stroke-width="1.5"
+                            marker-end="url(#arrow)"
+                            fill="none"
+                        />
+
+                        <!-- 步骤 2：看结构 -->
+                        <g>
+                            <rect
+                                x="60"
+                                y="140"
+                                width="560"
+                                height="56"
+                                rx="10"
+                                fill="#EEEDFE"
+                                stroke="#CECBF6"
+                                stroke-width="0.5"
+                            />
+                            <circle cx="84" cy="168" r="16" fill="#7F77DD" />
+                            <text
+                                class="th"
+                                x="84"
+                                y="168"
+                                text-anchor="middle"
+                                dominant-baseline="central"
+                                fill="#fff"
+                                font-size="13"
+                            >
+                                2
+                            </text>
+                            <text
+                                class="th"
+                                x="112"
+                                y="160"
+                                fill="#3C3489"
+                                font-size="13"
+                            >
+                                看结构 — 遍历文件系统
+                            </text>
+                            <text
+                                class="ts"
+                                x="112"
+                                y="180"
+                                fill="#534AB7"
+                                font-size="11"
+                            >
+                                查看目录结构、文件组织方式，找到相关代码所在位置
+                            </text>
+                        </g>
+                        <path
+                            d="M340 196 L340 212"
+                            stroke="#CECBF6"
+                            stroke-width="1.5"
+                            marker-end="url(#arrow)"
+                            fill="none"
+                        />
+
+                        <!-- 步骤 3：搜代码 -->
+                        <g>
+                            <rect
+                                x="60"
+                                y="216"
+                                width="560"
+                                height="56"
+                                rx="10"
+                                fill="#E6F1FB"
+                                stroke="#B5D4F4"
+                                stroke-width="0.5"
+                            />
+                            <circle cx="84" cy="244" r="16" fill="#378ADD" />
+                            <text
+                                class="th"
+                                x="84"
+                                y="244"
+                                text-anchor="middle"
+                                dominant-baseline="central"
+                                fill="#fff"
+                                font-size="13"
+                            >
+                                3
+                            </text>
+                            <text
+                                class="th"
+                                x="112"
+                                y="236"
+                                fill="#0C447C"
+                                font-size="13"
+                            >
+                                搜代码 — grep + LSP 双模式
+                            </text>
+                            <text
+                                class="ts"
+                                x="112"
+                                y="256"
+                                fill="#185FA5"
+                                font-size="11"
+                            >
+                                用 grep 搜关键词、用 LSP
+                                做符号级搜索（定义/引用），精准定位
+                            </text>
+                        </g>
+                        <path
+                            d="M340 272 L340 288"
+                            stroke="#B5D4F4"
+                            stroke-width="1.5"
+                            marker-end="url(#arrow)"
+                            fill="none"
+                        />
+
+                        <!-- 步骤 4：读源码 -->
+                        <g>
+                            <rect
+                                x="60"
+                                y="292"
+                                width="560"
+                                height="56"
+                                rx="10"
+                                fill="#FAEEDA"
+                                stroke="#FAC775"
+                                stroke-width="0.5"
+                            />
+                            <circle cx="84" cy="320" r="16" fill="#BA7517" />
+                            <text
+                                class="th"
+                                x="84"
+                                y="320"
+                                text-anchor="middle"
+                                dominant-baseline="central"
+                                fill="#fff"
+                                font-size="13"
+                            >
+                                4
+                            </text>
+                            <text
+                                class="th"
+                                x="112"
+                                y="312"
+                                fill="#633806"
+                                font-size="13"
+                            >
+                                读源码 — 深入理解实现
+                            </text>
+                            <text
+                                class="ts"
+                                x="112"
+                                y="332"
+                                fill="#854F0B"
+                                font-size="11"
+                            >
+                                打开相关文件，理解数据流、函数调用关系、业务逻辑
+                            </text>
+                        </g>
+                        <path
+                            d="M340 348 L340 364"
+                            stroke="#FAC775"
+                            stroke-width="1.5"
+                            marker-end="url(#arrow)"
+                            fill="none"
+                        />
+
+                        <!-- 步骤 5：做修改 -->
+                        <g>
+                            <rect
+                                x="60"
+                                y="368"
+                                width="560"
+                                height="56"
+                                rx="10"
+                                fill="#EAF3DE"
+                                stroke="#C0DD97"
+                                stroke-width="0.5"
+                            />
+                            <circle cx="84" cy="396" r="16" fill="#639922" />
+                            <text
+                                class="th"
+                                x="84"
+                                y="396"
+                                text-anchor="middle"
+                                dominant-baseline="central"
+                                fill="#fff"
+                                font-size="13"
+                            >
+                                5
+                            </text>
+                            <text
+                                class="th"
+                                x="112"
+                                y="388"
+                                fill="#27500A"
+                                font-size="13"
+                            >
+                                做修改 — 基于理解编辑代码
+                            </text>
+                            <text
+                                class="ts"
+                                x="112"
+                                y="408"
+                                fill="#3B6D11"
+                                font-size="11"
+                            >
+                                基于前 4
+                                步积累的理解，精确修改代码，而非盲目编辑
+                            </text>
+                        </g>
+                        <path
+                            d="M340 424 L340 440"
+                            stroke="#C0DD97"
+                            stroke-width="1.5"
+                            marker-end="url(#arrow)"
+                            fill="none"
+                        />
+
+                        <!-- 底部：关键洞察 -->
+                        <rect
+                            x="60"
+                            y="444"
+                            width="560"
+                            height="64"
+                            rx="10"
+                            fill="#FBEAF0"
+                            stroke="#F4C0D1"
+                            stroke-width="1"
+                        />
+                        <text
+                            class="ts"
+                            x="340"
+                            y="462"
+                            text-anchor="middle"
+                            fill="#D4537E"
+                            font-size="12"
+                            font-weight="500"
+                        >
+                            关键洞察
+                        </text>
+                        <text
+                            class="ts"
+                            x="80"
+                            y="482"
+                            fill="#72243E"
+                            font-size="11"
+                        >
+                            1. 如果 CLAUDE.md 没写好，第 1 步就缺失 → Claude
+                            只能"盲搜"，效率极低
+                        </text>
+                        <text
+                            class="ts"
+                            x="80"
+                            y="500"
+                            fill="#72243E"
+                            font-size="11"
+                        >
+                            2. 如果没有 LSP，第 3 步只能用文本 grep →
+                            返回大量噪音，浪费上下文
+                        </text>
+                    </svg>
+                </div>
+
+                </div>
+            </div>
+
+            <!-- ==================== 第四章 ==================== -->
+            <div class="section" id="ch4">
+                <h2>四、三种核心配置模式</h2>
+
+                <div class="three-col">
+                    <div class="card">
+                        <span class="tag tag-purple">模式一</span>
+                        <h3 style="font-size: 15px; margin-top: 8px">
+                            让代码库易于导航
+                        </h3>
+                        <ul style="font-size: 13px">
+                            <li>CLAUDE.md 精炼分层</li>
+                            <li>从子目录初始化</li>
+                            <li>按子目录限定测试命令</li>
+                            <li>使用 .ignore 排除无关文件</li>
+                            <li>构建 Code Map</li>
+                            <li>运行 LSP</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <span class="tag tag-teal">模式二</span>
+                        <h3 style="font-size: 15px; margin-top: 8px">
+                            主动维护配置
+                        </h3>
+                        <p style="font-size: 13px">
+                            为旧模型写的规则可能成为新模型的制约。
+                        </p>
+                        <div
+                            style="
+                                font-size: 13px;
+                                color: var(--text2);
+                                margin-top: 4px;
+                            "
+                        >
+                            建议每 3-6 个月或新模型发布后做一次配置审查。
+                        </div>
+                    </div>
+                    <div class="card">
+                        <span class="tag tag-coral">模式三</span>
+                        <h3 style="font-size: 15px; margin-top: 8px">
+                            分配所有权
+                        </h3>
+                        <ul style="font-size: 13px">
+                            <li>基础设-施投入先行</li>
+                            <li>专人负责（Agent Manager）</li>
+                            <li>跨职能工作组</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3>Code Map — 代码库地图</h3>
+                <p>
+                    Code Map 是一个轻量级 Markdown
+                    文件，在项目根目录<strong>用一行描述一个业务模块</strong>（如认证、支付、订单），让
+                    Claude 不用自己摸索「该去哪个模块找代码」。要写的是<strong>业务边界清晰的模块</strong>，而不是
+                    <code>components/</code>、<code>handlers/</code> 这类技术子目录。
+                </p>
+                <div class="viz-container">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 680 420"
+                        width="100%"
+                        role="img"
+                        aria-label="Code Map 模块级对比示意"
+                    >
+                        <title>Code Map 模块级对比示意</title>
+                        <desc>
+                            对比没有 Code Map 时 Claude 摸索业务模块，与有
+                            CODE_MAP.md 时直奔目标模块
+                        </desc>
+                        <defs>
+                            <marker
+                                id="arrow-codemap"
+                                viewBox="0 0 10 10"
+                                refX="8"
+                                refY="5"
+                                markerWidth="6"
+                                markerHeight="6"
+                                orient="auto-start-reverse"
+                            >
+                                <path
+                                    d="M2 1L8 5L2 9"
+                                    fill="none"
+                                    stroke="context-stroke"
+                                    stroke-width="1.5"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </marker>
+                        </defs>
+
+                        <text
+                            class="th"
+                            x="340"
+                            y="30"
+                            text-anchor="middle"
+                            font-size="15"
+                            font-weight="500"
+                            fill="#1a1a2e"
+                        >
+                            没有 Code Map → Claude 需要自己摸索模块边界
+                        </text>
+
+                        <!-- 左侧：没有 Code Map -->
+                        <g transform="translate(30, 50)">
+                            <text
+                                x="0"
+                                y="0"
+                                font-size="13"
+                                font-family="var(--font-mono)"
+                                fill="#5f5e5a"
+                            >
+                                $ 任务：修一个支付相关的 bug...
+                            </text>
+                            <text
+                                x="0"
+                                y="24"
+                                font-size="13"
+                                font-family="var(--font-mono)"
+                                fill="#5f5e5a"
+                            >
+                                $ 先摸清有哪些业务模块...
+                            </text>
+                            <text
+                                x="0"
+                                y="52"
+                                font-size="13"
+                                font-family="var(--font-mono)"
+                                fill="#888780"
+                            >
+                                auth/         (跟支付有关吗? 打开看看...)
+                            </text>
+                            <text
+                                x="0"
+                                y="72"
+                                font-size="13"
+                                font-family="var(--font-mono)"
+                                fill="#888780"
+                            >
+                                payments/     (应该是这儿? 进去看看...)
+                            </text>
+                            <text
+                                x="0"
+                                y="92"
+                                font-size="13"
+                                font-family="var(--font-mono)"
+                                fill="#888780"
+                            >
+                                billing/      (还是这儿? 也打开...)
+                            </text>
+                            <text
+                                x="0"
+                                y="112"
+                                font-size="13"
+                                font-family="var(--font-mono)"
+                                fill="#888780"
+                            >
+                                orders/       (订单和支付什么关系? 看看)
+                            </text>
+                            <text
+                                x="0"
+                                y="132"
+                                font-size="13"
+                                font-family="var(--font-mono)"
+                                fill="#888780"
+                            >
+                                notifications/ (应该无关? 不确定...)
+                            </text>
+                            <text
+                                x="0"
+                                y="152"
+                                font-size="13"
+                                font-family="var(--font-mono)"
+                                fill="#5f5e5a"
+                            >
+                                infra/         (先跳过)
+                            </text>
+
+                            <rect
+                                x="0"
+                                y="168"
+                                width="300"
+                                height="28"
+                                rx="6"
+                                fill="#fcebeb"
+                                stroke="#f7c1c1"
+                                stroke-width="0.5"
+                            />
+                            <text
+                                x="150"
+                                y="186"
+                                text-anchor="middle"
+                                font-size="12"
+                                font-weight="500"
+                                fill="#a32d2d"
+                            >
+                                浪费大量 Token 在摸索业务边界上
+                            </text>
+                        </g>
+
+                        <!-- VS 分隔 -->
+                        <text
+                            x="340"
+                            y="120"
+                            text-anchor="middle"
+                            font-size="22"
+                            font-weight="500"
+                            fill="#b4b2a9"
+                        >
+                            VS
+                        </text>
+                        <line
+                            x1="340"
+                            y1="135"
+                            x2="340"
+                            y2="365"
+                            stroke="#e5e3dc"
+                            stroke-width="1"
+                            stroke-dasharray="4 4"
+                        />
+
+                        <!-- 右侧：有 Code Map -->
+                        <g transform="translate(370, 50)">
+                            <text
+                                x="0"
+                                y="0"
+                                font-size="15"
+                                font-weight="500"
+                                fill="#1a1a2e"
+                            >
+                                有 Code Map → Claude 一目了然该去哪个模块
+                            </text>
+
+                            <rect
+                                x="0"
+                                y="14"
+                                width="280"
+                                height="250"
+                                rx="10"
+                                fill="#f8f7f4"
+                                stroke="#e5e3dc"
+                                stroke-width="0.5"
+                            />
+                            <rect
+                                x="0"
+                                y="14"
+                                width="280"
+                                height="28"
+                                rx="10"
+                                fill="#f1efe8"
+                            />
+                            <rect
+                                x="0"
+                                y="32"
+                                width="280"
+                                height="10"
+                                fill="#f1efe8"
+                            />
+                            <text
+                                x="140"
+                                y="32"
+                                text-anchor="middle"
+                                font-size="12"
+                                font-weight="500"
+                                fill="#1a1a2e"
+                            >
+                                CODE_MAP.md
+                            </text>
+
+                            <text
+                                x="16"
+                                y="62"
+                                font-size="11"
+                                font-weight="500"
+                                fill="#1a1a2e"
+                            >
+                                # Code Map — 业务模块一览
+                            </text>
+                            <line
+                                x1="16"
+                                y1="77"
+                                x2="264"
+                                y2="77"
+                                stroke="#e5e3dc"
+                                stroke-width="0.5"
+                            />
+
+                            <rect
+                                x="16"
+                                y="86"
+                                width="8"
+                                height="8"
+                                rx="2"
+                                fill="#7f77dd"
+                            />
+                            <text
+                                x="32"
+                                y="93"
+                                font-size="11"
+                                font-family="var(--font-mono)"
+                                font-weight="500"
+                                fill="#1a1a2e"
+                            >
+                                auth/
+                            </text>
+                            <text x="88" y="93" font-size="11" fill="#5f5e5a">
+                                — 认证与授权（OAuth, JWT, 权限）
+                            </text>
+
+                            <rect
+                                x="16"
+                                y="106"
+                                width="8"
+                                height="8"
+                                rx="2"
+                                fill="#1d9e75"
+                            />
+                            <text
+                                x="32"
+                                y="113"
+                                font-size="11"
+                                font-family="var(--font-mono)"
+                                font-weight="500"
+                                fill="#1a1a2e"
+                            >
+                                payments/
+                            </text>
+                            <text x="88" y="113" font-size="11" fill="#5f5e5a">
+                                — 支付处理（网关、退款、对账）
+                            </text>
+
+                            <rect
+                                x="16"
+                                y="126"
+                                width="8"
+                                height="8"
+                                rx="2"
+                                fill="#ba7517"
+                            />
+                            <text
+                                x="32"
+                                y="133"
+                                font-size="11"
+                                font-family="var(--font-mono)"
+                                font-weight="500"
+                                fill="#1a1a2e"
+                            >
+                                billing/
+                            </text>
+                            <text x="88" y="133" font-size="11" fill="#5f5e5a">
+                                — 账单与订阅（周期计费、发票）
+                            </text>
+
+                            <rect
+                                x="16"
+                                y="146"
+                                width="8"
+                                height="8"
+                                rx="2"
+                                fill="#d4537e"
+                            />
+                            <text
+                                x="32"
+                                y="153"
+                                font-size="11"
+                                font-family="var(--font-mono)"
+                                font-weight="500"
+                                fill="#1a1a2e"
+                            >
+                                orders/
+                            </text>
+                            <text x="88" y="153" font-size="11" fill="#5f5e5a">
+                                — 订单生命周期（下单、取消、履约）
+                            </text>
+
+                            <rect
+                                x="16"
+                                y="166"
+                                width="8"
+                                height="8"
+                                rx="2"
+                                fill="#639922"
+                            />
+                            <text
+                                x="32"
+                                y="173"
+                                font-size="11"
+                                font-family="var(--font-mono)"
+                                font-weight="500"
+                                fill="#1a1a2e"
+                            >
+                                notifications/
+                            </text>
+                            <text x="88" y="173" font-size="11" fill="#5f5e5a">
+                                — 消息通知（邮件、推送、Webhook）
+                            </text>
+
+                            <rect
+                                x="16"
+                                y="186"
+                                width="8"
+                                height="8"
+                                rx="2"
+                                fill="#378add"
+                            />
+                            <text
+                                x="32"
+                                y="193"
+                                font-size="11"
+                                font-family="var(--font-mono)"
+                                font-weight="500"
+                                fill="#1a1a2e"
+                            >
+                                infra/
+                            </text>
+                            <text x="88" y="193" font-size="11" fill="#5f5e5a">
+                                — 基础设施（K8s, CI/CD, 监控）
+                            </text>
+
+                            <text x="16" y="238" font-size="11" fill="#888780">
+                                需要细节时，再进入对应模块的 CLAUDE.md →
+                            </text>
+                        </g>
+
+                        <!-- 底部对比 -->
+                        <g transform="translate(30, 328)">
+                            <rect
+                                x="0"
+                                y="0"
+                                width="290"
+                                height="30"
+                                rx="8"
+                                fill="#fcebeb"
+                                stroke="#f7c1c1"
+                                stroke-width="0.5"
+                            />
+                            <text
+                                x="145"
+                                y="19"
+                                text-anchor="middle"
+                                font-size="11"
+                                fill="#a32d2d"
+                            >
+                                Claude: "payments 和 billing 有什么区别? 都打开看看..."
+                            </text>
+                        </g>
+                        <g transform="translate(350, 328)">
+                            <rect
+                                x="0"
+                                y="0"
+                                width="300"
+                                height="30"
+                                rx="8"
+                                fill="#e1f5ee"
+                                stroke="#9fe1cb"
+                                stroke-width="0.5"
+                            />
+                            <text
+                                x="150"
+                                y="19"
+                                text-anchor="middle"
+                                font-size="11"
+                                fill="#0f6e56"
+                            >
+                                Claude: "支付 bug → 根据 CODE_MAP.md 去 payments/ 模块"
+                            </text>
+                        </g>
+
+                        <text
+                            x="340"
+                            y="383"
+                            text-anchor="middle"
+                            font-size="11"
+                            fill="#888780"
+                        >
+                            加一个 CODE_MAP.md，描述业务模块边界 —— 立竿见影
+                        </text>
+                        <text
+                            x="340"
+                            y="405"
+                            text-anchor="middle"
+                            font-size="11"
+                            fill="#888780"
+                        >
+                            一行代码不用写；模块内的细节留给各模块自己的 CLAUDE.md
+                        </text>
+                    </svg>
+                </div>
+
+                <p>
+                    文章还强调一种<strong>分层做法</strong>：根目录
+                    <code>CLAUDE.md</code> 提供全局上下文，<code>CODE_MAP.md</code>
+                    列出模块路线图，各子模块下的
+                    <code>CLAUDE.md</code> 负责该模块内的约定与细节——先选模块，再读细节。
+                </p>
+                <div class="viz-container">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 680 500"
+                        width="100%"
+                        role="img"
+                        aria-label="CODE_MAP 与 CLAUDE.md 分层文件夹结构示意"
+                    >
+                        <title>CODE_MAP 与 CLAUDE.md 分层文件夹结构示意</title>
+                        <desc>
+                            展示根目录 CLAUDE.md、CODE_MAP.md 与各子模块
+                            CLAUDE.md 的分层目录结构
+                        </desc>
+
+                        <text
+                            class="th"
+                            x="340"
+                            y="28"
+                            text-anchor="middle"
+                            font-size="15"
+                            font-weight="500"
+                            fill="#1a1a2e"
+                        >
+                            分层做法：CODE_MAP.md → 子目录 CLAUDE.md
+                        </text>
+                        <text
+                            x="340"
+                            y="48"
+                            text-anchor="middle"
+                            font-size="11"
+                            fill="#888780"
+                        >
+                            顶层回答「去哪个模块？」· 下一层回答「在这个模块里怎么干？」
+                        </text>
+
+                        <!-- 左侧：文件夹树 -->
+                        <rect
+                            x="40"
+                            y="68"
+                            width="400"
+                            height="372"
+                            rx="12"
+                            fill="#f1efe8"
+                            stroke="#d3d1c7"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            x="240"
+                            y="92"
+                            text-anchor="middle"
+                            font-size="12"
+                            font-weight="500"
+                            fill="#5f5e5a"
+                        >
+                            项目目录结构示例
+                        </text>
+
+                        <!-- 根目录 -->
+                        <rect
+                            x="56"
+                            y="106"
+                            width="368"
+                            height="28"
+                            rx="6"
+                            fill="#1d9e75"
+                        />
+                        <text
+                            x="72"
+                            y="124"
+                            font-size="11"
+                            fill="#fff"
+                        >
+                            📁 项目根 /
+                        </text>
+
+                        <!-- 根 CLAUDE.md -->
+                        <rect
+                            x="72"
+                            y="144"
+                            width="336"
+                            height="26"
+                            rx="5"
+                            fill="#5dcaa5"
+                            stroke="#1d9e75"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            x="88"
+                            y="161"
+                            font-size="10"
+                            font-family="var(--font-mono)"
+                            fill="#085041"
+                        >
+                            📄 CLAUDE.md
+                        </text>
+                        <text x="210" y="161" font-size="10" fill="#085041">
+                            ← 全局架构 · 陷阱 · 代码约定
+                        </text>
+
+                        <!-- CODE_MAP.md -->
+                        <rect
+                            x="72"
+                            y="176"
+                            width="336"
+                            height="26"
+                            rx="5"
+                            fill="#cecbf6"
+                            stroke="#7f77dd"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            x="88"
+                            y="193"
+                            font-size="10"
+                            font-family="var(--font-mono)"
+                            fill="#3c3489"
+                        >
+                            📄 CODE_MAP.md
+                        </text>
+                        <text x="210" y="193" font-size="10" fill="#3c3489">
+                            ← 模块地图 · 一行一个业务模块
+                        </text>
+
+                        <!-- auth/ -->
+                        <rect
+                            x="72"
+                            y="214"
+                            width="336"
+                            height="24"
+                            rx="5"
+                            fill="#eeedfe"
+                            stroke="#cecbf6"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            x="88"
+                            y="230"
+                            font-size="10"
+                            font-family="var(--font-mono)"
+                            fill="#534ab7"
+                        >
+                            📁 auth/
+                        </text>
+                        <rect
+                            x="96"
+                            y="244"
+                            width="312"
+                            height="22"
+                            rx="4"
+                            fill="#fff"
+                            stroke="#9fe1cb"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            x="108"
+                            y="259"
+                            font-size="10"
+                            font-family="var(--font-mono)"
+                            fill="#0f6e56"
+                        >
+                            📄 CLAUDE.md
+                        </text>
+                        <text x="210" y="259" font-size="10" fill="#5f5e5a">
+                            认证模块：OAuth · JWT · 权限
+                        </text>
+
+                        <!-- payments/ (highlighted) -->
+                        <rect
+                            x="72"
+                            y="274"
+                            width="336"
+                            height="24"
+                            rx="5"
+                            fill="#e6f1fb"
+                            stroke="#378add"
+                            stroke-width="1"
+                        />
+                        <text
+                            x="88"
+                            y="290"
+                            font-size="10"
+                            font-family="var(--font-mono)"
+                            fill="#185fa5"
+                        >
+                            📁 payments/
+                        </text>
+                        <text x="200" y="290" font-size="9" fill="#378add">
+                            ← Claude 从 CODE_MAP 选中此模块
+                        </text>
+                        <rect
+                            x="96"
+                            y="304"
+                            width="312"
+                            height="22"
+                            rx="4"
+                            fill="#5dcaa5"
+                            stroke="#1d9e75"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            x="108"
+                            y="319"
+                            font-size="10"
+                            font-family="var(--font-mono)"
+                            fill="#085041"
+                        >
+                            📄 CLAUDE.md
+                        </text>
+                        <text x="210" y="319" font-size="10" fill="#085041">
+                            测试命令 · 关键文件 · 业务规则
+                        </text>
+                        <text
+                            x="108"
+                            y="338"
+                            font-size="9"
+                            font-family="var(--font-mono)"
+                            fill="#888780"
+                        >
+                            gateway.ts · refund.ts · …
+                        </text>
+
+                        <!-- billing/ -->
+                        <rect
+                            x="72"
+                            y="352"
+                            width="336"
+                            height="24"
+                            rx="5"
+                            fill="#eeedfe"
+                            stroke="#cecbf6"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            x="88"
+                            y="368"
+                            font-size="10"
+                            font-family="var(--font-mono)"
+                            fill="#534ab7"
+                        >
+                            📁 billing/
+                        </text>
+                        <rect
+                            x="96"
+                            y="382"
+                            width="312"
+                            height="22"
+                            rx="4"
+                            fill="#fff"
+                            stroke="#9fe1cb"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            x="108"
+                            y="397"
+                            font-size="10"
+                            font-family="var(--font-mono)"
+                            fill="#0f6e56"
+                        >
+                            📄 CLAUDE.md
+                        </text>
+                        <text x="210" y="397" font-size="10" fill="#5f5e5a">
+                            账单模块：订阅 · 发票 · 周期计费
+                        </text>
+
+                        <!-- orders/ (collapsed hint) -->
+                        <text
+                            x="88"
+                            y="424"
+                            font-size="10"
+                            font-family="var(--font-mono)"
+                            fill="#888780"
+                        >
+                            📁 orders/ → 📄 CLAUDE.md · …
+                        </text>
+
+                        <!-- 右侧：分层说明 -->
+                        <rect
+                            x="456"
+                            y="68"
+                            width="184"
+                            height="148"
+                            rx="10"
+                            fill="#e1f5ee"
+                            stroke="#9fe1cb"
+                            stroke-width="0.5"
+                        />
+                        <rect
+                            x="468"
+                            y="80"
+                            width="56"
+                            height="20"
+                            rx="5"
+                            fill="#1d9e75"
+                        />
+                        <text
+                            x="496"
+                            y="94"
+                            text-anchor="middle"
+                            font-size="10"
+                            font-weight="500"
+                            fill="#fff"
+                        >
+                            顶层
+                        </text>
+                        <text
+                            x="468"
+                            y="116"
+                            font-size="11"
+                            font-weight="500"
+                            fill="#0f6e56"
+                        >
+                            根目录文件
+                        </text>
+                        <text x="468" y="134" font-size="10" fill="#5f5e5a">
+                            CLAUDE.md
+                        </text>
+                        <text x="476" y="148" font-size="9" fill="#888780">
+                            全局上下文
+                        </text>
+                        <text x="468" y="166" font-size="10" fill="#5f5e5a">
+                            CODE_MAP.md
+                        </text>
+                        <text x="476" y="180" font-size="9" fill="#888780">
+                            去哪个模块？
+                        </text>
+                        <text
+                            x="468"
+                            y="200"
+                            font-size="9"
+                            font-weight="500"
+                            fill="#0f6e56"
+                        >
+                            会话开始先读这两份
+                        </text>
+
+                        <line
+                            x1="548"
+                            y1="224"
+                            x2="548"
+                            y2="244"
+                            stroke="#378add"
+                            stroke-width="1.5"
+                        />
+                        <polygon
+                            points="548,244 544,236 552,236"
+                            fill="#378add"
+                        />
+
+                        <rect
+                            x="456"
+                            y="252"
+                            width="184"
+                            height="148"
+                            rx="10"
+                            fill="#eeedfe"
+                            stroke="#cecbf6"
+                            stroke-width="0.5"
+                        />
+                        <rect
+                            x="468"
+                            y="264"
+                            width="72"
+                            height="20"
+                            rx="5"
+                            fill="#7f77dd"
+                        />
+                        <text
+                            x="504"
+                            y="278"
+                            text-anchor="middle"
+                            font-size="10"
+                            font-weight="500"
+                            fill="#fff"
+                        >
+                            子模块层
+                        </text>
+                        <text
+                            x="468"
+                            y="300"
+                            font-size="11"
+                            font-weight="500"
+                            fill="#3c3489"
+                        >
+                            各模块目录下
+                        </text>
+                        <text x="468" y="318" font-size="10" fill="#5f5e5a">
+                            auth/CLAUDE.md
+                        </text>
+                        <text x="468" y="334" font-size="10" fill="#5f5e5a">
+                            payments/CLAUDE.md
+                        </text>
+                        <text x="468" y="350" font-size="10" fill="#5f5e5a">
+                            billing/CLAUDE.md
+                        </text>
+                        <text x="468" y="366" font-size="10" fill="#888780">
+                            … 每个模块各一份
+                        </text>
+                        <text
+                            x="468"
+                            y="386"
+                            font-size="9"
+                            font-weight="500"
+                            fill="#534ab7"
+                        >
+                            进入模块后再加载
+                        </text>
+
+                        <!-- CODE_MAP 内容缩略 -->
+                        <rect
+                            x="456"
+                            y="412"
+                            width="184"
+                            height="28"
+                            rx="6"
+                            fill="#fff"
+                            stroke="#cecbf6"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            x="548"
+                            y="430"
+                            text-anchor="middle"
+                            font-size="9"
+                            font-family="var(--font-mono)"
+                            fill="#534ab7"
+                        >
+                            payments/ → 支付处理模块
+                        </text>
+
+                        <!-- 底部流程 -->
+                        <rect
+                            x="40"
+                            y="456"
+                            width="600"
+                            height="28"
+                            rx="6"
+                            fill="#faeeda"
+                            stroke="#fac775"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            x="340"
+                            y="474"
+                            text-anchor="middle"
+                            font-size="11"
+                            fill="#633806"
+                        >
+                            读取顺序：根 CLAUDE.md → CODE_MAP.md 选模块 → 子目录
+                            CLAUDE.md 读细节
+                        </text>
+                    </svg>
+                </div>
+                <h3>配置演进生命周期</h3>
+                <div class="viz-container">
+                    <svg viewBox="0 0 680 200" width="100%" role="img">
+                        <g transform="translate(60, 70)">
+                            <rect
+                                x="0"
+                                y="0"
+                                width="120"
+                                height="48"
+                                rx="10"
+                                fill="var(--purple-100)"
+                                stroke="var(--purple-400)"
+                                stroke-width="1"
+                            />
+                            <text
+                                x="60"
+                                y="29"
+                                text-anchor="middle"
+                                font-size="12"
+                                font-weight="500"
+                                fill="var(--purple-800)"
+                            >
+                                旧配置
+                            </text>
+                        </g>
+                        <polyline
+                            points="180,94 210,94 210,50 240,50"
+                            fill="none"
+                            stroke="var(--blue-400)"
+                            stroke-width="1.5"
+                            marker-end="url(#a2)"
+                            style="marker-end: url(#a2)"
+                        />
+                        <g transform="translate(250, 26)">
+                            <rect
+                                x="0"
+                                y="0"
+                                width="120"
+                                height="48"
+                                rx="10"
+                                fill="var(--blue-100)"
+                                stroke="var(--blue-400)"
+                                stroke-width="1"
+                            />
+                            <text
+                                x="60"
+                                y="17"
+                                text-anchor="middle"
+                                font-size="11"
+                                font-weight="500"
+                                fill="var(--blue-600)"
+                            >
+                                新模型发布
+                            </text>
+                            <text
+                                x="60"
+                                y="33"
+                                text-anchor="middle"
+                                font-size="10"
+                                fill="var(--text3)"
+                            >
+                                能力提升
+                            </text>
+                        </g>
+                        <polyline
+                            points="370,50 400,50 400,94 430,94"
+                            fill="none"
+                            stroke="var(--amber-400)"
+                            stroke-width="1.5"
+                            marker-end="url(#a2)"
+                        />
+                        <g transform="translate(440, 70)">
+                            <rect
+                                x="0"
+                                y="0"
+                                width="120"
+                                height="48"
+                                rx="10"
+                                fill="var(--amber-50)"
+                                stroke="var(--amber-400)"
+                                stroke-width="1"
+                            />
+                            <text
+                                x="60"
+                                y="17"
+                                text-anchor="middle"
+                                font-size="11"
+                                font-weight="500"
+                                fill="var(--amber-400)"
+                            >
+                                配置审查
+                            </text>
+                            <text
+                                x="60"
+                                y="33"
+                                text-anchor="middle"
+                                font-size="10"
+                                fill="var(--text3)"
+                            >
+                                移除过时约束
+                            </text>
+                        </g>
+                        <polyline
+                            points="560,94 590,94 590,50 560,50"
+                            fill="none"
+                            stroke="var(--green-400)"
+                            stroke-width="1.5"
+                        />
+
+                        <!-- Bottom: 每3-6月 -->
+                        <text
+                            x="340"
+                            y="160"
+                            text-anchor="middle"
+                            font-size="12"
+                            fill="var(--text3)"
+                        >
+                            循环周期：每 3-6 个月或新模型发布后
+                        </text>
+                    </svg>
+                    <div class="figcaption">
+                        旧规则如"每个重构拆分成单文件更改" →
+                        新模型完全可以协调多文件编辑，过时规则应当移除。
+                    </div>
+                </div>
+
+              
+            </div>
+
+            <!-- ==================== 第五章 ==================== -->
+            <div class="section" id="ch5">
+                <h2>五、实施路线图</h2>
+                <p>文章推荐的 8 步实施路线图，按优先级排序：</p>
+
+                <div class="viz-container">
+                    <svg viewBox="0 0 680 480" width="680" role="img">
+                        <defs>
+                            <marker
+                                id="a6"
+                                viewBox="0 0 10 10"
+                                refX="8"
+                                refY="5"
+                                markerWidth="6"
+                                markerHeight="6"
+                                orient="auto"
+                            >
+                                <path
+                                    d="M2 1L8 5L2 9"
+                                    fill="none"
+                                    stroke="var(--text2)"
+                                    stroke-width="1.5"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </marker>
+                        </defs>
+
+                        <!-- Step 1 -->
+                        <rect
+                            x="80"
+                            y="30"
+                            width="520"
+                            height="44"
+                            rx="10"
+                            fill="var(--purple-50)"
+                            stroke="var(--purple-100)"
+                            stroke-width="0.5"
+                        />
+                        <circle
+                            cx="100"
+                            cy="52"
+                            r="14"
+                            fill="var(--purple-400)"
+                        />
+                        <text
+                            x="100"
+                            y="57"
+                            text-anchor="middle"
+                            font-size="12"
+                            font-weight="500"
+                            fill="#fff"
+                        >
+                            1
+                        </text>
+                        <text
+                            x="126"
+                            y="47"
+                            font-size="13"
+                            font-weight="500"
+                            fill="var(--purple-600)"
+                        >
+                            投资基础设施
+                        </text>
+                        <text x="126" y="64" font-size="11" fill="var(--text2)">
+                            小团队预搭建 CLAUDE.md + 基本 Hooks + Skills
+                        </text>
+
+                        <line
+                            x1="340"
+                            y1="74"
+                            x2="340"
+                            y2="86"
+                            stroke="var(--text3)"
+                            stroke-width="1"
+                            marker-end="url(#a6)"
+                        />
+
+                        <!-- Step 2 -->
+                        <rect
+                            x="80"
+                            y="88"
+                            width="520"
+                            height="44"
+                            rx="10"
+                            fill="var(--teal-50)"
+                            stroke="var(--teal-100)"
+                            stroke-width="0.5"
+                        />
+                        <circle
+                            cx="100"
+                            cy="110"
+                            r="14"
+                            fill="var(--teal-400)"
+                        />
+                        <text
+                            x="100"
+                            y="115"
+                            text-anchor="middle"
+                            font-size="12"
+                            font-weight="500"
+                            fill="#fff"
+                        >
+                            2
+                        </text>
+                        <text
+                            x="126"
+                            y="105"
+                            font-size="13"
+                            font-weight="500"
+                            fill="var(--teal-600)"
+                        >
+                            从 CLAUDE.md 开始
+                        </text>
+                        <text
+                            x="126"
+                            y="122"
+                            font-size="11"
+                            fill="var(--text2)"
+                        >
+                            根目录 + 子目录分层配置
+                        </text>
+
+                        <line
+                            x1="340"
+                            y1="132"
+                            x2="340"
+                            y2="144"
+                            stroke="var(--text3)"
+                            stroke-width="1"
+                            marker-end="url(#a6)"
+                        />
+
+                        <!-- Step 3 -->
+                        <rect
+                            x="80"
+                            y="146"
+                            width="520"
+                            height="44"
+                            rx="10"
+                            fill="var(--coral-50)"
+                            stroke="var(--coral-400)"
+                            stroke-width="0.5"
+                            opacity=".4"
+                        />
+                        <circle
+                            cx="100"
+                            cy="168"
+                            r="14"
+                            fill="var(--coral-400)"
+                        />
+                        <text
+                            x="100"
+                            y="173"
+                            text-anchor="middle"
+                            font-size="12"
+                            font-weight="500"
+                            fill="#fff"
+                        >
+                            3
+                        </text>
+                        <text
+                            x="126"
+                            y="163"
+                            font-size="13"
+                            font-weight="500"
+                            fill="var(--coral-600)"
+                        >
+                            逐步添加 Hooks
+                        </text>
+                        <text
+                            x="126"
+                            y="180"
+                            font-size="11"
+                            fill="var(--text2)"
+                        >
+                            先自动化检查 → 再自我改进
+                        </text>
+
+                        <line
+                            x1="340"
+                            y1="190"
+                            x2="340"
+                            y2="202"
+                            stroke="var(--text3)"
+                            stroke-width="1"
+                            marker-end="url(#a6)"
+                        />
+
+                        <!-- Step 4 -->
+                        <rect
+                            x="80"
+                            y="204"
+                            width="520"
+                            height="44"
+                            rx="10"
+                            fill="var(--blue-50)"
+                            stroke="var(--blue-100)"
+                            stroke-width="0.5"
+                        />
+                        <circle
+                            cx="100"
+                            cy="226"
+                            r="14"
+                            fill="var(--blue-400)"
+                        />
+                        <text
+                            x="100"
+                            y="231"
+                            text-anchor="middle"
+                            font-size="12"
+                            font-weight="500"
+                            fill="#fff"
+                        >
+                            4
+                        </text>
+                        <text
+                            x="126"
+                            y="221"
+                            font-size="13"
+                            font-weight="500"
+                            fill="var(--blue-600)"
+                        >
+                            创建核心 Skills
+                        </text>
+                        <text
+                            x="126"
+                            y="238"
+                            font-size="11"
+                            fill="var(--text2)"
+                        >
+                            围绕团队最常用的复杂任务创建
+                        </text>
+
+                        <line
+                            x1="340"
+                            y1="248"
+                            x2="340"
+                            y2="260"
+                            stroke="var(--text3)"
+                            stroke-width="1"
+                            marker-end="url(#a6)"
+                        />
+
+                        <!-- Step 5 -->
+                        <rect
+                            x="80"
+                            y="262"
+                            width="520"
+                            height="44"
+                            rx="10"
+                            fill="var(--amber-50)"
+                            stroke="var(--amber-400)"
+                            stroke-width="0.5"
+                            opacity=".4"
+                        />
+                        <circle
+                            cx="100"
+                            cy="284"
+                            r="14"
+                            fill="var(--amber-400)"
+                        />
+                        <text
+                            x="100"
+                            y="289"
+                            text-anchor="middle"
+                            font-size="12"
+                            font-weight="500"
+                            fill="#fff"
+                        >
+                            5
+                        </text>
+                        <text
+                            x="126"
+                            y="279"
+                            font-size="13"
+                            font-weight="500"
+                            fill="var(--amber-400)"
+                        >
+                            通过 Plugins 分发
+                        </text>
+                        <text
+                            x="126"
+                            y="296"
+                            font-size="11"
+                            fill="var(--text2)"
+                        >
+                            打包已验证配置，赋能新成员
+                        </text>
+
+                        <line
+                            x1="340"
+                            y1="306"
+                            x2="340"
+                            y2="318"
+                            stroke="var(--text3)"
+                            stroke-width="1"
+                            marker-end="url(#a6)"
+                        />
+
+                        <!-- Step 6 -->
+                        <rect
+                            x="80"
+                            y="320"
+                            width="520"
+                            height="44"
+                            rx="10"
+                            fill="var(--green-50)"
+                            stroke="var(--green-100)"
+                            stroke-width="0.5"
+                        />
+                        <circle
+                            cx="100"
+                            cy="342"
+                            r="14"
+                            fill="var(--green-600)"
+                        />
+                        <text
+                            x="100"
+                            y="347"
+                            text-anchor="middle"
+                            font-size="12"
+                            font-weight="500"
+                            fill="#fff"
+                        >
+                            6
+                        </text>
+                        <text
+                            x="126"
+                            y="337"
+                            font-size="13"
+                            font-weight="500"
+                            fill="var(--green-600)"
+                        >
+                            扩展 MCP + Subagents
+                        </text>
+                        <text
+                            x="126"
+                            y="354"
+                            font-size="11"
+                            fill="var(--text2)"
+                        >
+                            连接内部系统，使用子代理探索
+                        </text>
+
+                        <!-- Step 7 & 8 side by side -->
+                        <g transform="translate(80, 380)">
+                            <rect
+                                x="0"
+                                y="0"
+                                width="250"
+                                height="44"
+                                rx="10"
+                                fill="var(--purple-50)"
+                                stroke="var(--purple-100)"
+                                stroke-width="0.5"
+                                stroke-dasharray="4 2"
+                            />
+                            <circle
+                                cx="20"
+                                cy="22"
+                                r="14"
+                                fill="none"
+                                stroke="var(--purple-400)"
+                                stroke-width="1.5"
+                            />
+                            <text
+                                x="20"
+                                y="27"
+                                text-anchor="middle"
+                                font-size="12"
+                                font-weight="500"
+                                fill="var(--purple-600)"
+                            >
+                                7
+                            </text>
+                            <text
+                                x="46"
+                                y="17"
+                                font-size="13"
+                                font-weight="500"
+                                fill="var(--purple-600)"
+                            >
+                                定期审查（每 3-6 月）
+                            </text>
+                            <text
+                                x="46"
+                                y="34"
+                                font-size="11"
+                                fill="var(--text2)"
+                            >
+                                移除过时配置
+                            </text>
+                        </g>
+
+                        <g transform="translate(350, 380)">
+                            <rect
+                                x="0"
+                                y="0"
+                                width="250"
+                                height="44"
+                                rx="10"
+                                fill="var(--teal-50)"
+                                stroke="var(--teal-100)"
+                                stroke-width="0.5"
+                                stroke-dasharray="4 2"
+                            />
+                            <circle
+                                cx="20"
+                                cy="22"
+                                r="14"
+                                fill="none"
+                                stroke="var(--teal-400)"
+                                stroke-width="1.5"
+                            />
+                            <text
+                                x="20"
+                                y="27"
+                                text-anchor="middle"
+                                font-size="12"
+                                font-weight="500"
+                                fill="var(--teal-600)"
+                            >
+                                8
+                            </text>
+                            <text
+                                x="46"
+                                y="17"
+                                font-size="13"
+                                font-weight="500"
+                                fill="var(--teal-600)"
+                            >
+                                明确所有权
+                            </text>
+                            <text
+                                x="46"
+                                y="34"
+                                font-size="11"
+                                fill="var(--text2)"
+                            >
+                                DRI / Agent Manager
+                            </text>
+                        </g>
+                    </svg>
+                    <div class="figcaption">
+                        关键提示：步骤 1 最关键（小团队搭基础设施），步骤 2
+                        是所有配置的基础。步骤 3-6 按顺序推进，7-8 持续迭代。
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== 第六章 ==================== -->
+            <div class="section" id="ch6">
+                <h2>六、常见误区 vs 正确做法</h2>
+
+                <div class="viz-container">
+                    <svg
+                        viewBox="0 0 680 480"
+                        width="100%"
+                        role="img"
+                        aria-label="常见误区 vs 正确做法"
+                    >
+                        <title>常见误区 vs 正确做法</title>
+                        <desc>
+                            对比 Claude Code 使用中的常见误区和对应的正确做法
+                        </desc>
+                        <defs>
+                            <marker
+                                id="arrow"
+                                viewBox="0 0 10 10"
+                                refX="8"
+                                refY="5"
+                                markerWidth="6"
+                                markerHeight="6"
+                                orient="auto-start-reverse"
+                            >
+                                <path
+                                    d="M2 1L8 5L2 9"
+                                    fill="none"
+                                    stroke="context-stroke"
+                                    stroke-width="1.5"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </marker>
+                        </defs>
+
+                        <text
+                            class="th"
+                            x="340"
+                            y="26"
+                            text-anchor="middle"
+                            fill="#1a1a2e"
+                            font-size="15"
+                            font-weight="500"
+                        >
+                            常见误区 vs 正确做法
+                        </text>
+                        <text
+                            class="ts"
+                            x="340"
+                            y="44"
+                            text-anchor="middle"
+                            fill="#888"
+                            font-size="11"
+                        >
+                            避免这些坑，让 Claude Code 发挥最大效果
+                        </text>
+
+                        <!-- 表头 -->
+                        <rect
+                            x="40"
+                            y="56"
+                            width="290"
+                            height="28"
+                            rx="6"
+                            fill="#E24B4A"
+                        />
+                        <text
+                            class="ts"
+                            x="185"
+                            y="70"
+                            text-anchor="middle"
+                            dominant-baseline="central"
+                            fill="#fff"
+                            font-size="12"
+                            font-weight="500"
+                        >
+                            误区
+                        </text>
+
+                        <rect
+                            x="350"
+                            y="56"
+                            width="290"
+                            height="28"
+                            rx="6"
+                            fill="#1D9E75"
+                        />
+                        <text
+                            class="ts"
+                            x="495"
+                            y="70"
+                            text-anchor="middle"
+                            dominant-baseline="central"
+                            fill="#fff"
+                            font-size="12"
+                            font-weight="500"
+                        >
+                            正确做法
+                        </text>
+
+                        <!-- 误区 1 -->
+                        <rect
+                            x="40"
+                            y="92"
+                            width="290"
+                            height="52"
+                            rx="8"
+                            fill="#FCEBEB"
+                            stroke="#F7C1C1"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="52"
+                            y="108"
+                            fill="#A32D2D"
+                            font-size="11"
+                            font-weight="500"
+                        >
+                            把所有专业知识塞进 CLAUDE.md
+                        </text>
+                        <text
+                            class="ts"
+                            x="52"
+                            y="126"
+                            fill="#791F1F"
+                            font-size="10"
+                        >
+                            导致上下文过载，每次会话都加载大量无关信息
+                        </text>
+
+                        <path
+                            d="M336 118 L344 118"
+                            stroke="#5F5E5A"
+                            stroke-width="1.5"
+                            marker-end="url(#arrow)"
+                            fill="none"
+                        />
+
+                        <rect
+                            x="350"
+                            y="92"
+                            width="290"
+                            height="52"
+                            rx="8"
+                            fill="#E1F5EE"
+                            stroke="#9FE1CB"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="362"
+                            y="108"
+                            fill="#0F6E56"
+                            font-size="11"
+                            font-weight="500"
+                        >
+                            CLAUDE.md 保持精炼，专业知识做成 Skill
+                        </text>
+                        <text
+                            class="ts"
+                            x="362"
+                            y="126"
+                            fill="#085041"
+                            font-size="10"
+                        >
+                            渐进式披露：按需加载，节省上下文空间
+                        </text>
+
+                        <!-- 误区 2 -->
+                        <rect
+                            x="40"
+                            y="152"
+                            width="290"
+                            height="52"
+                            rx="8"
+                            fill="#FCEBEB"
+                            stroke="#F7C1C1"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="52"
+                            y="168"
+                            fill="#A32D2D"
+                            font-size="11"
+                            font-weight="500"
+                        >
+                            基础没做好就上 MCP
+                        </text>
+                        <text
+                            class="ts"
+                            x="52"
+                            y="186"
+                            fill="#791F1F"
+                            font-size="10"
+                        >
+                            MCP 连接不稳定，Claude 连基本上下文都没有
+                        </text>
+
+                        <path
+                            d="M336 178 L344 178"
+                            stroke="#5F5E5A"
+                            stroke-width="1.5"
+                            marker-end="url(#arrow)"
+                            fill="none"
+                        />
+
+                        <rect
+                            x="350"
+                            y="152"
+                            width="290"
+                            height="52"
+                            rx="8"
+                            fill="#E1F5EE"
+                            stroke="#9FE1CB"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="362"
+                            y="168"
+                            fill="#0F6E56"
+                            font-size="11"
+                            font-weight="500"
+                        >
+                            先做好 CLAUDE.md → Hooks → Skills
+                        </text>
+                        <text
+                            class="ts"
+                            x="362"
+                            y="186"
+                            fill="#085041"
+                            font-size="10"
+                        >
+                            基础打好后，再扩展 MCP 连接内部系统
+                        </text>
+
+                        <!-- 误区 3 -->
+                        <rect
+                            x="40"
+                            y="212"
+                            width="290"
+                            height="52"
+                            rx="8"
+                            fill="#FCEBEB"
+                            stroke="#F7C1C1"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="52"
+                            y="228"
+                            fill="#A32D2D"
+                            font-size="11"
+                            font-weight="500"
+                        >
+                            认为 LSP 是自动集成的
+                        </text>
+                        <text
+                            class="ts"
+                            x="52"
+                            y="246"
+                            fill="#791F1F"
+                            font-size="10"
+                        >
+                            不装插件和语言服务器，只用文本 grep，结果噪音巨大
+                        </text>
+
+                        <path
+                            d="M336 238 L344 238"
+                            stroke="#5F5E5A"
+                            stroke-width="1.5"
+                            marker-end="url(#arrow)"
+                            fill="none"
+                        />
+
+                        <rect
+                            x="350"
+                            y="212"
+                            width="290"
+                            height="52"
+                            rx="8"
+                            fill="#E1F5EE"
+                            stroke="#9FE1CB"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="362"
+                            y="228"
+                            fill="#0F6E56"
+                            font-size="11"
+                            font-weight="500"
+                        >
+                            手动安装 LSP 插件 + 语言服务器
+                        </text>
+                        <text
+                            class="ts"
+                            x="362"
+                            y="246"
+                            fill="#085041"
+                            font-size="10"
+                        >
+                            符号级搜索精准定位，节省大量上下文
+                        </text>
+
+                        <!-- 误区 4 -->
+                        <rect
+                            x="40"
+                            y="272"
+                            width="290"
+                            height="52"
+                            rx="8"
+                            fill="#FCEBEB"
+                            stroke="#F7C1C1"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="52"
+                            y="288"
+                            fill="#A32D2D"
+                            font-size="11"
+                            font-weight="500"
+                        >
+                            用 Hook 写指令指导 Claude 做事
+                        </text>
+                        <text
+                            class="ts"
+                            x="52"
+                            y="306"
+                            fill="#791F1F"
+                            font-size="10"
+                        >
+                            Hook 应该做自动化，不是当指令用
+                        </text>
+
+                        <path
+                            d="M336 298 L344 298"
+                            stroke="#5F5E5A"
+                            stroke-width="1.5"
+                            marker-end="url(#arrow)"
+                            fill="none"
+                        />
+
+                        <rect
+                            x="350"
+                            y="272"
+                            width="290"
+                            height="52"
+                            rx="8"
+                            fill="#E1F5EE"
+                            stroke="#9FE1CB"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="362"
+                            y="288"
+                            fill="#0F6E56"
+                            font-size="11"
+                            font-weight="500"
+                        >
+                            指令放 CLAUDE.md，自动化放 Hook
+                        </text>
+                        <text
+                            class="ts"
+                            x="362"
+                            y="306"
+                            fill="#085041"
+                            font-size="10"
+                        >
+                            Hook = 自动化脚本（lint/format/记录经验）
+                        </text>
+
+                        <!-- 误区 5 -->
+                        <rect
+                            x="40"
+                            y="332"
+                            width="290"
+                            height="52"
+                            rx="8"
+                            fill="#FCEBEB"
+                            stroke="#F7C1C1"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="52"
+                            y="348"
+                            fill="#A32D2D"
+                            font-size="11"
+                            font-weight="500"
+                        >
+                            好的配置停留在"部落知识"层面
+                        </text>
+                        <text
+                            class="ts"
+                            x="52"
+                            y="366"
+                            fill="#791F1F"
+                            font-size="10"
+                        >
+                            每个人自己摸索，新成员上手困难
+                        </text>
+
+                        <path
+                            d="M336 358 L344 358"
+                            stroke="#5F5E5A"
+                            stroke-width="1.5"
+                            marker-end="url(#arrow)"
+                            fill="none"
+                        />
+
+                        <rect
+                            x="350"
+                            y="332"
+                            width="290"
+                            height="52"
+                            rx="8"
+                            fill="#E1F5EE"
+                            stroke="#9FE1CB"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="362"
+                            y="348"
+                            fill="#0F6E56"
+                            font-size="11"
+                            font-weight="500"
+                        >
+                            打包成 Plugin 组织级分发
+                        </text>
+                        <text
+                            class="ts"
+                            x="362"
+                            y="366"
+                            fill="#085041"
+                            font-size="10"
+                        >
+                            验证过的配置一键安装，新成员零配置上手
+                        </text>
+
+                        <!-- 误区 6 -->
+                        <rect
+                            x="40"
+                            y="392"
+                            width="290"
+                            height="52"
+                            rx="8"
+                            fill="#FCEBEB"
+                            stroke="#F7C1C1"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="52"
+                            y="408"
+                            fill="#A32D2D"
+                            font-size="11"
+                            font-weight="500"
+                        >
+                            在同一会话中同时探索和编辑
+                        </text>
+                        <text
+                            class="ts"
+                            x="52"
+                            y="426"
+                            fill="#791F1F"
+                            font-size="10"
+                        >
+                            探索产生的噪音干扰编辑的精确性
+                        </text>
+
+                        <path
+                            d="M336 418 L344 418"
+                            stroke="#5F5E5A"
+                            stroke-width="1.5"
+                            marker-end="url(#arrow)"
+                            fill="none"
+                        />
+
+                        <rect
+                            x="350"
+                            y="392"
+                            width="290"
+                            height="52"
+                            rx="8"
+                            fill="#E1F5EE"
+                            stroke="#9FE1CB"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="362"
+                            y="408"
+                            fill="#0F6E56"
+                            font-size="11"
+                            font-weight="500"
+                        >
+                            用 Subagent 探索，主代理编辑
+                        </text>
+                        <text
+                            class="ts"
+                            x="362"
+                            y="426"
+                            fill="#085041"
+                            font-size="10"
+                        >
+                            探索和编辑分离，避免上下文污染
+                        </text>
+
+                        <!-- 误区 7 -->
+                        <rect
+                            x="40"
+                            y="452"
+                            width="290"
+                            height="24"
+                            rx="6"
+                            fill="#FCEBEB"
+                            stroke="#F7C1C1"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="185"
+                            y="464"
+                            text-anchor="middle"
+                            dominant-baseline="central"
+                            fill="#A32D2D"
+                            font-size="10"
+                        >
+                            从仓库根目录启动，让 Claude 面对百万行代码
+                        </text>
+
+                        <path
+                            d="M336 464 L344 464"
+                            stroke="#5F5E5A"
+                            stroke-width="1.5"
+                            marker-end="url(#arrow)"
+                            fill="none"
+                        />
+
+                        <rect
+                            x="350"
+                            y="452"
+                            width="290"
+                            height="24"
+                            rx="6"
+                            fill="#E1F5EE"
+                            stroke="#9FE1CB"
+                            stroke-width="0.5"
+                        />
+                        <text
+                            class="ts"
+                            x="495"
+                            y="464"
+                            text-anchor="middle"
+                            dominant-baseline="central"
+                            fill="#0F6E56"
+                            font-size="10"
+                        >
+                            在子目录初始化，缩小任务范围
+                        </text>
+                    </svg>
+                </div>
+
+                <h3 style="margin-top: 24px">三个最重要的决定</h3>
+                <div class="card-grid">
+                    <div class="card">
+                        <span class="tag tag-purple">1</span>
+                        <strong>CLAUDE.md 分层设计</strong><br /><span
+                            style="font-size: 13px; color: var(--text2)"
+                            >根目录全局 + 子目录本地，按需取用</span
+                        >
+                    </div>
+                    <div class="card">
+                        <span class="tag tag-teal">2</span>
+                        <strong>从子目录而非根目录启动</strong><br /><span
+                            style="font-size: 13px; color: var(--text2)"
+                            >缩小范围，节省上下文</span
+                        >
+                    </div>
+                    <div class="card">
+                        <span class="tag tag-coral">3</span>
+                        <strong>基础设施先投</strong><br /><span
+                            style="font-size: 13px; color: var(--text2)"
+                            >小团队先搭建好体验，再大规模推广</span
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== 第七章 ==================== -->
+            <div class="section" id="ch7">
+                <h2>七、案例速览 + 企业落地检查清单</h2>
+
+                <div class="card-grid">
+                    <div class="case-card">
+                        <h4>大型零售组织</h4>
+                        <p>
+                            构建连接内部分析平台的 Skill，打包成 Plugin 分发<br /><span
+                                style="color: var(--text3)"
+                                >启示：标准配置应当共享</span
+                            >
+                        </p>
+                    </div>
+                    <div class="case-card">
+                        <h4>企业软件公司</h4>
+                        <p>
+                            组织范围内部署 C/C++ LSP 集成，作为推广第一步<br /><span
+                                style="color: var(--text3)"
+                                >启示：LSP 在大型代码库中至关重要</span
+                            >
+                        </p>
+                    </div>
+                    <div class="case-card">
+                        <h4>Perforce 用户</h4>
+                        <p>
+                            用 Hook 拦截文件写入执行 p4
+                            edit（后因原生支持移除）<br /><span
+                                style="color: var(--text3)"
+                                >启示：配置需随平台进化更新</span
+                            >
+                        </p>
+                    </div>
+                    <div class="case-card">
+                        <h4>支付服务团队</h4>
+                        <p>
+                            将部署 Skill 绑定到 pay-ments/ 路径<br /><span
+                                style="color: var(--text3)"
+                                >启示：Monorepo 中用路径绑定精准加载</span
+                            >
+                        </p>
+                    </div>
+                </div>
+
+                <h3>企业落地检查清单</h3>
+                <div class="card">
+                    <ul class="checklist">
+                        <li>是否有一个小团队负责基础设施搭建？</li>
+                        <li>根目录和子目录是否有分层 CLAUDE.md？</li>
+                        <li>是否配置了基本的 Hooks（lint/format 检查）？</li>
+                        <li>是否有核心任务的 Skills？</li>
+                        <li>验证通过的配置是否打包成 Plugin 分发？</li>
+                        <li>是否有 MCP 连接内部系统？</li>
+                        <li>是否配置了 LSP 集成？</li>
+                        <li>是否有明确的负责人（Agent Manager）？</li>
+                        <li>是否建立了定期审查机制（3-6 月/次）？</li>
+                    </ul>
+                </div>
+
+                <div class="quote" style="margin-top: 24px">
+                    <strong>核心金句：</strong>"成功的 Claude Code
+                    大规模部署，决定性因素不仅在于模型本身，更在于围绕模型构建的生态系统。"
+                </div>
+
+                <div
+                    style="
+                        text-align: center;
+                        margin-top: 48px;
+                        padding: 24px 0;
+                        border-top: 1px solid var(--border);
+                        font-size: 13px;
+                        color: var(--text3);
+                    "
+                >
+                    本课件基于 Claude 官方博客文章整理 · 阅读原文：<a
+                        href="https://claude.com/blog/how-claude-code-works-in-large-codebases-best-practices-and-where-to-start"
+                        target="_blank"
+                        style="color: var(--purple-400)"
+                        >How Claude Code Works in Large Codebases</a
+                    >
+                </div>
+            </div>
+        </main>
+        </div>
+
+        <script>
+            // Sidebar collapse
+            (function () {
+                var toggle = document.getElementById("navToggle");
+                var storageKey = "claude-code-course-nav-collapsed";
+
+                function setCollapsed(collapsed) {
+                    document.body.classList.toggle("nav-collapsed", collapsed);
+                    toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+                    toggle.setAttribute(
+                        "aria-label",
+                        collapsed ? "展开导航菜单" : "收起导航菜单",
+                    );
+                    try {
+                        localStorage.setItem(storageKey, collapsed ? "1" : "0");
+                    } catch (e) {}
+                }
+
+                try {
+                    if (localStorage.getItem(storageKey) === "1") {
+                        setCollapsed(true);
+                    }
+                } catch (e) {}
+
+                toggle.addEventListener("click", function () {
+                    setCollapsed(!document.body.classList.contains("nav-collapsed"));
+                });
+            })();
+
+            // Active nav link tracking
+            document.querySelectorAll("nav a").forEach(function (link) {
+                link.addEventListener("click", function (e) {
+                    document.querySelectorAll("nav a").forEach(function (a) {
+                        a.classList.remove("active");
+                    });
+                    this.classList.add("active");
+                });
+            });
+            // Scroll-based active nav
+            var observer = new IntersectionObserver(
+                function (entries) {
+                    entries.forEach(function (entry) {
+                        if (entry.isIntersecting) {
+                            var id = entry.target.getAttribute("id");
+                            document
+                                .querySelectorAll("nav a")
+                                .forEach(function (a) {
+                                    a.classList.remove("active");
+                                    if (a.getAttribute("href") === "#" + id)
+                                        a.classList.add("active");
+                                });
+                        }
+                    });
+                },
+                { rootMargin: "-20% 0px -70% 0px" },
+            );
+            document.querySelectorAll(".section").forEach(function (s) {
+                observer.observe(s);
+            });
+        </script>
+    </body>
+</html>
